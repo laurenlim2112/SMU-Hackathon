@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="initial-scale=1, width=device-width">
+        <title>SMU Hackathon App | {% block title %}{% endblock %}</title>
+    </head>
+    <body>
+        <div>
+            {% if session["user_id"] %}
+                        <p>{{ session["user_id"] }}</p>
+                    {% else %}
+                        <ul class="navbar-nav ms-auto mt-2">
+                            <li class="nav-item"><a class="nav-link" href="/register">Register</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/login">Log In</a></li>
+                        </ul>
+                    {% endif %}
+        </div>
+        <main>
+            {% block main %}{% endblock %}
+        </main>
+    </body>
+</html>
