@@ -5,6 +5,9 @@
 {% endblock %}
 
 {% block main %}
+    <div class="mb-3">
+        Welcome, {{ name }}!
+    </div>
     <form action="/addclient" method="post">
         <div class="mb-3">
             <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">

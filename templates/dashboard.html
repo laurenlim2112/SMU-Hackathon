@@ -6,6 +6,12 @@
 
 {% block main %}
     {% for client in clients %}
-        <p>{{ client["name"] }}</p>
+        <div class="card" style="height:50px">
+            <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link link-dark text-decoration-none">
+                <div class="row mx-2">
+                    {{ client["name"] }} Status: {{ client["status"] }}
+                </div>
+            </a>
+        </div>
     {% endfor %}
 {% endblock %}
