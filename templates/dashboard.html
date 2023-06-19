@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Dashboard
+{% endblock %}
+
+{% block main %}
+    {% for client in clients %}
+        <p>{{ client["name"] }}</p>
+    {% endfor %}
+{% endblock %}

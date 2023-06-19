@@ -1,7 +1,17 @@
 {% extends "layout.html" %}
 
-{% block body %}
-    <p>
-        Welcome, {{ name }}!
-    </p>
+{% block title %}
+    Home
+{% endblock %}
+
+{% block main %}
+    <form action="/addclient" method="post">
+        <div class="mb-3">
+            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
+        </div>
+        <div class="mb-3">
+            <input autocomplete="off" class="form-control mx-auto w-auto" id="email" name="email" placeholder="Email" type="text">
+        </div>
+        <button class="btn btn-primary" type="submit">Add Client</button>
+    </form>
 {% endblock %}
