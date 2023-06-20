@@ -1,13 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+    document.querySelector('#start-task-view').style.display = 'block';
+    document.querySelector('#generate-invoice-view').style.display = 'block';
     document.querySelector('#end-task-view').style.display = 'none';
 
     document.querySelector('#confirm-start').addEventListener('click', () => start_task());
-
 });
 
 function start_task() {
     document.querySelector('#start-task-view').style.display = 'none';
+    document.querySelector('#generate-invoice-view').style.display = 'none';
     document.querySelector('#end-task-view').style.display = 'block';
     start = Date.now();
     const date = new Date();
@@ -27,12 +29,13 @@ function start_task() {
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     date: currentDate,
-                    hours: duration / 3600000,
+                    hours: (duration / 3600000).toFixed(1),
                     description: document.querySelector('#task-description').value
                 })
             })
             .catch(error => console.log(error));
             document.querySelector('#start-task-view').style.display = 'block';
+            document.querySelector('#generate-invoice-view').style.display = 'block';
             document.querySelector('#end-task-view').style.display = 'none';
         }
     }

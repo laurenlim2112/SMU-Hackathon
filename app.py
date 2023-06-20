@@ -1,10 +1,10 @@
-from flask import Flask, flash, request, redirect, render_template, session, url_for
+from flask import Flask, flash, request, redirect, render_template, session, url_for, send_file
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from helpers import login_required
 
-import sqlite3, os
+import sqlite3, os, pandas
 
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
@@ -174,3 +174,18 @@ def addtask(id):
     connection.commit()
     connection.close()
     return redirect(url_for("client", id=id))
+
+@app.route("/export/<id>", methods=["POST"])
+@login_required
+def export(id):
+    filename = request.form.get("filename")
+    file = filename + ".xlsx"
+    connection = sqlite3.connect("database.db")
+    query = "SELECT datetime, duration, description, costs FROM tasks WHERE client_id=:id"
+    pandas.read_sql(query, con=connection, params={"id": id}).to_excel(file)
+    @app.after_request
+    def after_export(response):
+        if os.path.exists(file):
+            os.remove(file)
+        return response
+    return send_file(file, mimetype='application/vnd.ms-excel')
