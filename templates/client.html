@@ -56,9 +56,21 @@
         {% endfor %}
     </div>
     <div id="payment-pending-view">
-        payment pending.
+        {% for timesheet in payment_pending_timesheets %}
+            <div class="card" style="height:70px">
+                <div class="card-body">
+                    <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">{{ timesheet["created"] }}</a>
+                </div>
+            </div>
+        {% endfor %}
     </div>
     <div id="payment-received-view">
-        payment received.
+        {% for timesheet in payment_received_timesheets %}
+            <div class="card" style="height:70px">
+                <div class="card-body">
+                    <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">{{ timesheet["created"] }}</a>
+                </div>
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

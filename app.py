@@ -140,37 +140,43 @@ def client(id):
     connection = sqlite3.connect("database.db")
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
-    client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [id]).fetchone()
-    client = {}
-    client["name"] = client_info["name"]
-    client["id"] = client_info["id"]
-    client["email"] = client_info["email"]
-    in_progress_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 1", [client_info["id"]]).fetchall()
-    in_progress_timesheets = []
-    for row in in_progress_rows:
-        in_progress_timesheet = {}
-        in_progress_timesheet["id"] = row["id"]
-        in_progress_timesheet["created"] = row["created"]
-        in_progress_timesheets.append(in_progress_timesheet)
-    payment_pending_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 1", [client_info["id"]]).fetchall()
-    payment_pending_timesheets = []
-    for row in payment_pending_rows:
-        payment_pending_timesheet = {}
-        payment_pending_timesheet["id"] = row["id"]
-        payment_pending_timesheet["created"] = row["created"]
-        payment_pending_timesheets.append(payment_pending_timesheet)
-    payment_received_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 1", [client_info["id"]]).fetchall()
-    payment_received_timesheets = []
-    for row in payment_received_rows:
-        payment_received_timesheet = {}
-        payment_received_timesheet["id"] = row["id"]
-        payment_received_timesheet["created"] = row["created"]
-        payment_received_timesheets.append(payment_received_timesheet)
-    connection.close()
-    return render_template("client.html", client=client, 
-                           in_progress_timesheets=in_progress_timesheets, 
-                           payment_pending_timesheets=payment_pending_timesheets, 
-                           payment_received_timesheets=payment_received_timesheets)
+    user_id = session["user_id"]
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
+    if len(rel) != 0:
+        client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [id]).fetchone()
+        client = {}
+        client["name"] = client_info["name"]
+        client["id"] = client_info["id"]
+        client["email"] = client_info["email"]
+        in_progress_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 1", [client_info["id"]]).fetchall()
+        in_progress_timesheets = []
+        for row in in_progress_rows:
+            in_progress_timesheet = {}
+            in_progress_timesheet["id"] = row["id"]
+            in_progress_timesheet["created"] = row["created"]
+            in_progress_timesheets.append(in_progress_timesheet)
+        payment_pending_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 2", [client_info["id"]]).fetchall()
+        payment_pending_timesheets = []
+        for row in payment_pending_rows:
+            payment_pending_timesheet = {}
+            payment_pending_timesheet["id"] = row["id"]
+            payment_pending_timesheet["created"] = row["created"]
+            payment_pending_timesheets.append(payment_pending_timesheet)
+        payment_received_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 3", [client_info["id"]]).fetchall()
+        payment_received_timesheets = []
+        for row in payment_received_rows:
+            payment_received_timesheet = {}
+            payment_received_timesheet["id"] = row["id"]
+            payment_received_timesheet["created"] = row["created"]
+            payment_received_timesheets.append(payment_received_timesheet)
+        connection.close()
+        return render_template("client.html", client=client, 
+                            in_progress_timesheets=in_progress_timesheets, 
+                            payment_pending_timesheets=payment_pending_timesheets, 
+                            payment_received_timesheets=payment_received_timesheets)
+    else:
+        flash("You are not authorised to view this client's timesheets!")
+        return redirect(url_for("home"))
 
 @app.route("/timesheets/<id>", methods=["GET"])
 @login_required
@@ -180,68 +186,125 @@ def timesheet(id):
     cursor = connection.cursor()
     timesheet = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()
     client_id = timesheet["client_id"]
-    client = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
-    rows = cursor.execute("SELECT * FROM tasks WHERE timesheet_id = ?", [id]).fetchall()
-    tasks = []
-    for row in rows:
-        task = {}
-        lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [row["user_id"]]).fetchone()
-        task["lawyer"] = lawyer_info["name"]
-        task["datetime"] = row["datetime"]
-        task["description"] = row["description"]
-        task["duration"] = row["duration"]
-        task["costs"] = row["costs"]
-        tasks.append(task)
-    connection.close()
-    return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks)
+    user_id = session["user_id"]
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
+    if len(rel) != 0:
+        client = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
+        rows = cursor.execute("SELECT * FROM tasks WHERE timesheet_id = ?", [id]).fetchall()
+        tasks = []
+        for row in rows:
+            task = {}
+            lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [row["user_id"]]).fetchone()
+            task["lawyer"] = lawyer_info["name"]
+            task["datetime"] = row["datetime"]
+            task["description"] = row["description"]
+            task["duration"] = row["duration"]
+            task["amount"] = row["amount"]
+            tasks.append(task)
+        d_rows = cursor.execute("SELECT * FROM disbursements WHERE timesheet_id = ?", [id]).fetchall()
+        disbursements = []
+        for d_row in d_rows:
+            disbursement = {}
+            disbursement["description"] = d_row["description"]
+            disbursement["amount"] = d_row["amount"]
+            disbursements.append(disbursement)
+        connection.close()
+        return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, disbursements=disbursements)
+    else:
+        flash("You are not authorised to view this timesheet!")
+        return redirect(url_for("home"))
 
 @app.route("/addtask/<id>", methods=["POST"])
 @login_required
 def addtask(id):
-    data = request.get_json()
     user_id = session["user_id"]
     connection = sqlite3.connect("database.db")
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
-    date = data["date"]
     client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
-    lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [user_id]).fetchone()
-    hours = round(float(data["hours"]), 1)
-    description = data["description"]
-    costs = hours * lawyer_info["rate"]
-    cursor.execute("INSERT INTO tasks (user_id, client_id, timesheet_id, datetime, duration, description, costs) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                   [user_id, client_id, id, date, hours, description, costs])
-    connection.commit()
-    connection.close()
-    return redirect(url_for("timesheet", id=id))
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
+    if len(rel) != 0:
+        lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [user_id]).fetchone()
+        data = request.get_json()
+        date = data["date"]
+        hours = round(float(data["hours"]), 1)
+        description = data["description"]
+        amount = hours * lawyer_info["rate"]
+        cursor.execute("INSERT INTO tasks (user_id, client_id, timesheet_id, datetime, duration, description, amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    [user_id, client_id, id, date, hours, description, amount])
+        connection.commit()
+        connection.close()
+        return redirect(url_for("timesheet", id=id))
+    else:
+        flash("You are not authorised to add tasks to this timesheet!")
+        return redirect(url_for("home"))
 
 @app.route("/addtimesheet/<id>", methods=["POST"])
 @login_required
 def addtimesheet(id):
+    user_id = session["user_id"]
     connection = sqlite3.connect("database.db")
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
-    cursor.execute("INSERT INTO timesheets (client_id, status, created) VALUES (?, ?, ?)",
-                   [id, 1, datetime.datetime.now().strftime("%d-%m-%Y")])
-    connection.commit()
-    connection.close()
-    return redirect(url_for("client", id=id))
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
+    if len(rel) != 0:
+        cursor.execute("INSERT INTO timesheets (client_id, status, created) VALUES (?, ?, ?)",
+                    [id, 1, datetime.datetime.now().strftime("%d-%m-%Y")])
+        connection.commit()
+        connection.close()
+        return redirect(url_for("client", id=id))
+    else:
+        flash("You are not authorised to add timesheets for this client!")
+        return redirect(url_for("home"))
 
-@app.route("/export/<id>", methods=["POST"])
+
+@app.route("/disbursement/<id>", methods=["POST"])
 @login_required
-def export(id):
-    filename = request.form.get("filename")
-    file = filename + ".xlsx"
+def disbursement(id):
+    user_id = session["user_id"]
     connection = sqlite3.connect("database.db")
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
-    query = "SELECT datetime, duration, description, costs FROM tasks WHERE client_id=:id"
-    pandas.read_sql(query, con=connection, params={"id": client_id}).to_excel(file)
-    connection.close()
-    @app.after_request
-    def after_export(response):
-        if os.path.exists(file):
-            os.remove(file)
-        return response
-    return send_file(file, mimetype='application/vnd.ms-excel')
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
+    if len(rel) != 0:
+        description = request.form.get("disbursement")
+        amount = request.form.get("amount")
+        cursor.execute("INSERT INTO disbursements (timesheet_id, description, amount) VALUES (?, ?, ?)", [id, description, amount])
+        connection.commit()
+        connection.close()
+        return redirect(url_for('timesheet', id=id))
+    else:
+        flash("You are not authorised to add disbursements to this invoice!")
+        return redirect(url_for("home"))
+
+@app.route("/export/<id>", methods=["POST"])
+@login_required
+def export(id):
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
+    if len(rel) != 0:
+        filename = request.form.get("filename")
+        file = filename + ".xlsx"
+        cursor.execute("UPDATE timesheets SET status = 2 WHERE id = ?", [id])
+        timesheet_query = "SELECT datetime, duration, description, amount FROM tasks WHERE client_id=:id"
+        timesheet_dataframe = pandas.read_sql(timesheet_query, con=connection, params={"id": client_id})
+        disbursement_query = "SELECT description, amount FROM disbursements WHERE timesheet_id=:id"
+        disbursement_dataframe = pandas.read_sql(disbursement_query, con=connection, params={"id": id})
+        invoice_dataframe = pandas.concat([timesheet_dataframe, disbursement_dataframe])
+        invoice_dataframe.to_excel(file)
+        connection.commit()
+        connection.close()
+        @app.after_request
+        def after_export(response):
+            if os.path.exists(file):
+                os.remove(file)
+            return response
+        return send_file(file, mimetype='application/vnd.ms-excel')
+    else:
+        flash("You are not authorised to access this invoice!")
+        return redirect(url_for("home"))
