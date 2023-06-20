@@ -1,112 +1,64 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    {{ client["name"] }}
+    Timesheets for {{ client["name"] }}
 {% endblock %}
 
 {% block script %}
-    <script src="{{ url_for('static', filename='timesheet.js') }}"></script>
+    <script src="{{ url_for('static', filename='client.js') }}"></script>
 {% endblock %}
 
 {% block main %}
-    <div id="start-task-view">
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#startTaskModal">
-            Start Task
-        </button>
-      
-        <div class="modal fade" id="startTaskModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="startTaskModalLabel" aria-hidden="true">
+    <div>
+        Timesheets for {{ client["name"] }}
+    </div>
+
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createNewTimesheetModal">
+        Create New Timesheet
+    </button>
+    <form action="{{ url_for('addtimesheet', id=client['id']) }}" method="post">
+        <div class="modal fade" id="createNewTimesheetModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createNewTimesheetModalLabel" aria-hidden="true">
             <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="startTaskModalLabel">Start new task for {{ client["name"] }}</h5>
+                    <h5 class="modal-title" id="createNewTimesheetModalLabel">Create new timesheet for {{ client["name"] }}</h5>
                 </div>
                 <div class="modal-body">
-                    You are about to start a new task for {{ client["name"] }}. 
+                    You are about to create a new timesheet for {{ client["name"] }}. 
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirm-start" data-bs-dismiss="modal">Confirm</button>
+                    <button type="submit" class="btn btn-primary" id="confirm-create" data-bs-dismiss="modal">Confirm</button>
                 </div>
             </div>
             </div>
         </div>
+    </form>
+
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <button type="button" id="in-progress" class="btn btn-primary">In Progress</button>
+        </li>
+        <li class="nav-item">
+            <button type="button" id="payment-pending" class="btn btn-warning">Payment Pending</button>
+        </li>
+        <li class="nav-item">
+            <button type="button" id="payment-received" class="btn btn-success">Payment Received</button>
+        </li>
+      </ul>
+    <div id="in-progress-view">
+        {% for timesheet in in_progress_timesheets %}
+            <div class="card" style="height:70px">
+                <div class="card-body">
+                    <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">{{ timesheet["created"] }}</a>
+                </div>
+            </div>
+        {% endfor %}
     </div>
-
-    <div id="generate-invoice-view">
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal">
-            Generate Invoice
-        </button>
-        <form action="{{ url_for('export', id=client['id']) }}" method="post">
-            <div class="modal fade" id="generateInvoiceModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="generateInvoiceModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="generateInvoiceModalLabel">Generate invoice for {{ client["name"] }}</h5>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="filename" name="filename" placeholder="Filename" type="text">
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" id="generate-invoice" data-bs-target="#generateInvoiceModal" data-bs-toggle="modal" data-bs-dismiss="modal">Confirm</button>
-                    </div>
-                </div>
-                </div>
-            </div>
-        </form>
+    <div id="payment-pending-view">
+        payment pending.
     </div>
-
-    <div id="end-task-view">
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#endTaskModal">
-            End Task
-        </button>
-      
-        <div class="modal fade" id="endTaskModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="endTaskModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="endTaskModalLabel">End task for {{ client["name"] }}</h5>
-                </div>
-                <div class="modal-body">
-                    You are about to end your ongoing task for {{ client["name"] }}. 
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="confirm-end" data-bs-target="#submitTaskModal" data-bs-toggle="modal" data-bs-dismiss="modal">Confirm</button>
-                </div>
-            </div>
-            </div>
-        </div>
-
-        <div class="modal fade" id="submitTaskModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="endTaskModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="submitTaskModalLabel">Submit task for {{ client["name"] }}</h5>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="task-description" name="description" placeholder="Task Description" type="text">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success" id="task-submit" data-bs-dismiss="modal">Submit</button>
-                </div>
-            </div>
-            </div>
-        </div>
+    <div id="payment-received-view">
+        payment received.
     </div>
-
-    {% for task in tasks %}
-        <div class="card" style="height:50px">
-            <div class="row mx-2">
-                Duration: {{ task["duration"] }}
-                Lawyer: {{ task["lawyer"] }}
-                Date: {{ task["datetime"] }}
-            </div>
-        </div>
-    {% endfor %}
-
 {% endblock %}
