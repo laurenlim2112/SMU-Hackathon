@@ -515,7 +515,7 @@ def import_excel(id):
         tasks_dataframe = pandas.read_excel(file, sheet_name="Timesheet")
         for row in tasks_dataframe.to_dict("records"):
             task_lawyer = cursor.execute("SELECT id FROM users WHERE name = ? AND firm = ?", [row["lawyer"], user_firm]).fetchone()["id"]
-            task_datetime = datetime.datetime.strptime(row["datetime"], "%d-%m-%Y")
+            task_datetime = row["datetime"].to_pydatetime().strftime("%d-%m-%Y")
             task_duration = row["duration"]
             task_description = row["description"]
             task_amount = row["amount"]
@@ -529,7 +529,7 @@ def import_excel(id):
                            [timesheet_id, disbursement_description, disbursement_amount])
         fixed_fees_dataframe = pandas.read_excel(file, sheet_name="Fixed Fees")
         for row in fixed_fees_dataframe.to_dict("records"):
-            fixed_fee_datetime = datetime.datetime.strptime(row["datetime"], "%d-%m-%Y")
+            fixed_fee_datetime = row["datetime"].to_pydatetime().strftime("%d-%m-%Y")
             fixed_fee_description = row["description"]
             fixed_fee = cursor.execute("SELECT id FROM fixed_fees WHERE firm = ? AND description = ?", 
                                        [user_firm, fixed_fee_description]).fetchone()["id"]
