@@ -1,17 +1,16 @@
-body {font-family: Arial, Helvetica, sans-serif;}
-form {border: 3px solid #f1f1f1;}
+body {
+    font-family: Arial, Helvetica, sans-serif;
+}
 
-input[type=text], input[type=password] {
-  width: 100%;
-  padding: 12px 20px;
-  margin: 8px 0;
-  display: inline-block;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
+form {
+    border: 3px solid #f1f1f1;
+}
+
+label {
+    padding: 3px;
 }
 
 button {
-  background-color: #04AA6D;
   color: white;
   padding: 14px 20px;
   margin: 8px 0;
@@ -24,7 +23,29 @@ button:hover {
   opacity: 0.8;
 }
 
-.cancelbtn {
+.fullforminput {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.partialforminput {
+    width: 40%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+.successbtn {
+    background-color: #04AA6D;
+}
+
+.dangerbtn {
   width: auto;
   padding: 10px 18px;
   background-color: #f44336;
@@ -41,7 +62,8 @@ img.avatar {
 }
 
 .container {
-  padding: 16px;
+    margin: 10px;
+    padding: 16px;
 }
 
 span.psw {

@@ -5,30 +5,33 @@
 {% endblock %}
 
 {% block main %}
-    <form action="/register" method="post" id="registerform">
-        <div class="mb-3">
-            <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="name" name="name" placeholder="Name" type="text">
-        </div>
-        <div class="mb-3">
-            <input autocomplete="off" class="form-control mx-auto w-auto" id="email" name="email" placeholder="Email" type="text">
-        </div>
-        <div class="mb-3">
-            <input autocomplete="off" class="form-control mx-auto w-auto" id="rate" name="rate" placeholder="Hourly Rate" type="number" min="0" step="0.01">
-        </div>
-        <div class="mb-3 dropdown">
-            <select id="firm" name="firm" form="registerform" class="form-select" aria-label="Default select example">
-                <option value="" disabled selected>Select your firm</option>
-                {% for firm in firms %}
-                    <option value="{{ firm['id'] }}">{{ firm["name"] }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="mb-3">
-            <input class="form-control mx-auto w-auto" id="password" name="password" placeholder="Password" type="password">
-        </div>
-        <div class="mb-3"> 
-            <input class="form-control mx-auto w-auto" id="password" name="confirmation" placeholder="Confirm Password" type="password">
-        </div>
-        <button class="btn btn-primary" type="submit">Register</button>
+    <h2 class="container"> Register</h2>
+    <form action="/register" method="post" id="registerform" class="container">
+        <label for="name"><b>Name</b></label>
+        <input autocomplete="off" autofocus class="fullforminput" id="name" name="name" placeholder="Name" type="text" required>
+        
+        <label for="email"><b>Email</b></label>
+        <input autocomplete="off" class="fullforminput" id="email" name="email" placeholder="Email" type="text" required>
+        
+        <label for="rate"><b>Hourly Rate</b></label>
+        <input autocomplete="off" class="partialforminput" id="rate" name="rate" placeholder="Hourly Rate" type="number" min="0" step="0.01" required>
+        
+        <label for="firm"><b>Law Firm</b></label>
+        <select id="firm" name="firm" form="registerform" class="partialforminput">
+            <option value="" disabled selected>Select your firm</option>
+            {% for firm in firms %}
+                <option value="{{ firm['id'] }}">{{ firm["name"] }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="password"><b>Password</b></label>
+        <input class="fullforminput" type="password" placeholder="Enter Password" name="password" required>
+
+        <label for="confirmation"><b>Confirmation</b></label>
+        <input class="fullforminput" type="password" placeholder="Confirm Password" name="confirmation" required>
+        
+        <button class="successbtn" type="submit">Register</button>
     </form>
+
+    <a href="/login" class="container">Back to login</a>
 {% endblock %}
