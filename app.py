@@ -23,6 +23,9 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
     if request.method == "POST":
         name = request.form.get("name")
         if not name:
@@ -32,8 +35,6 @@ def register():
         if not email:
             flash("Email cannot be left blank!")
             return render_template("register.html")
-        connection = sqlite3.connect("database.db")
-        cursor = connection.cursor()
         existing = cursor.execute("SELECT * FROM users WHERE email = ?", [email]).fetchall()
         if len(existing) > 0:
             flash("Email already in use!")
@@ -48,14 +49,22 @@ def register():
             return render_template("register.html")
         hashed_password = generate_password_hash(password)
         rate = request.form.get("rate")
-        cursor.execute("INSERT INTO users (name, email, hash, rate) VALUES(?, ?, ?, ?)", 
-                       [name, email, hashed_password, rate])
+        firm_id = request.form.get("firm")
+        cursor.execute("INSERT INTO users (name, email, hash, rate, firm) VALUES(?, ?, ?, ?, ?)", 
+                        [name, email, hashed_password, rate, firm_id])
         connection.commit()
         connection.close()
         flash("Registration successful!")
         return redirect(url_for("home"))
     else:
-        return render_template("register.html")
+        firm_rows = cursor.execute("SELECT * FROM firms").fetchall()
+        firms = []
+        for row in firm_rows:
+            firm = {}
+            firm["id"] = row["id"]
+            firm["name"] = row["name"]
+            firms.append(firm)
+        return render_template("register.html", firms=firms)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -94,18 +103,19 @@ def logout():
 @app.route("/addclient", methods=["POST"])
 @login_required
 def addclient():
+    user_id = session["user_id"]
     name = request.form.get("name")
     email = request.form.get("email")
     connection = sqlite3.connect("database.db")
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
-    result = cursor.execute("SELECT * FROM clients WHERE email = ?", [email]).fetchall()
+    firm_id = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
+    result = cursor.execute("SELECT * FROM clients WHERE email = ? AND firm = ?", [email, firm_id]).fetchall()
     if len(result) > 0:
         flash("Client already in system!")
         return redirect(url_for("home"))
-    cursor.execute("INSERT INTO clients (name, email, in_progress, payment_pending, payment_received) VALUES (?, ?, ?, ?, ?)", 
-                   [name, email, 0, 0, 0])
-    user_id = session["user_id"]
+    cursor.execute("INSERT INTO clients (name, email, in_progress, payment_pending, payment_received, firm) VALUES (?, ?, ?, ?, ?, ?)", 
+                   [name, email, 0, 0, 0, firm_id])
     client_id = cursor.execute("SELECT * FROM clients WHERE email = ?", [email]).fetchone()["id"]
     cursor.execute("INSERT INTO users_clients (user_id, client_id) VALUES (?, ?)", [user_id, client_id])
     connection.commit()
@@ -123,6 +133,11 @@ def addlawyer(id):
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
     if len(rel) != 0:
         new_lawyer_id = request.form.get("id")
+        user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
+        new_lawyer_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [new_lawyer_id]).fetchone()["firm"]
+        if user_firm != new_lawyer_firm:
+            flash("You are not authorised to add this lawyer for this client!")
+            return redirect(url_for("home"))
         cursor.execute("INSERT INTO users_clients (user_id, client_id) VALUES (?, ?)", [new_lawyer_id, id])
         connection.commit()
         connection.close()
@@ -160,6 +175,7 @@ def client(id):
     connection.row_factory = sqlite3.Row
     cursor = connection.cursor()
     user_id = session["user_id"]
+    user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
     if len(rel) != 0:
         client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [id]).fetchone()
@@ -188,13 +204,29 @@ def client(id):
             payment_received_timesheet["id"] = row["id"]
             payment_received_timesheet["created"] = row["created"]
             payment_received_timesheets.append(payment_received_timesheet)
-        lawyers = cursor.execute("SELECT * FROM users").fetchall()
+        lawyer_rows = cursor.execute("SELECT * FROM users WHERE firm = ?", [user_firm]).fetchall()
+        lawyers = []
+        for row in lawyer_rows:
+            if row["id"] != user_id:
+                lawyer = {}
+                lawyer["id"] = row["id"]
+                lawyer["name"] = row["name"]
+                lawyers.append(lawyer)
+        fixed_fee_rows = cursor.execute("SELECT * FROM fixed_fees WHERE firm = ?", [user_firm]).fetchall()
+        fixed_fees = []
+        for row in fixed_fee_rows:
+            fixed_fee = {}
+            fixed_fee["id"] = row["id"]
+            fixed_fee["description"] = row["description"]
+            fixed_fee["amount"] = row["amount"]
+            fixed_fees.append(fixed_fee)
         connection.close()
         return render_template("client.html", client=client, 
                             in_progress_timesheets=in_progress_timesheets, 
                             payment_pending_timesheets=payment_pending_timesheets, 
                             payment_received_timesheets=payment_received_timesheets,
-                            lawyers=lawyers)
+                            lawyers=lawyers,
+                            fixed_fees = fixed_fees)
     else:
         flash("You are not authorised to view this client's timesheets!")
         return redirect(url_for("home"))
@@ -229,8 +261,17 @@ def timesheet(id):
             disbursement["description"] = d_row["description"]
             disbursement["amount"] = d_row["amount"]
             disbursements.append(disbursement)
+        fixed_rows = cursor.execute("SELECT * FROM fixed_fee_charges WHERE timesheet_id = ?", [id]).fetchall()
+        fixed_fees = []
+        for fixed_row in fixed_rows:
+            fixed_fee = {}
+            fee_type = fixed_row["fixed_fee"]
+            fixed_fee["description"] = cursor.execute("SELECT * FROM fixed_fees WHERE id = ?", [fee_type]).fetchone()["description"]
+            fixed_fee["amount"] = fixed_row["amount"]
+            fixed_fees.append(fixed_fee)
         connection.close()
-        return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, disbursements=disbursements)
+        return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, 
+                               disbursements=disbursements, fixed_fees=fixed_fees)
     else:
         flash("You are not authorised to view this timesheet!")
         return redirect(url_for("home"))
@@ -269,8 +310,9 @@ def addtimesheet(id):
     cursor = connection.cursor()
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
     if len(rel) != 0:
-        cursor.execute("INSERT INTO timesheets (client_id, status, created) VALUES (?, ?, ?)",
-                    [id, 1, datetime.datetime.now().strftime("%d-%m-%Y")])
+        user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
+        cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)",
+                    [id, 1, datetime.datetime.now().strftime("%d-%m-%Y"), user_firm])
         in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
         cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
         connection.commit()
@@ -300,6 +342,93 @@ def disbursement(id):
     else:
         flash("You are not authorised to add disbursements to this invoice!")
         return redirect(url_for("home"))
+    
+@app.route("/billfixedfee/<id>", methods=["POST"])
+@login_required
+def billfixedfee(id):
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
+    if len(rel) != 0:
+        upfront = int(request.form.get("upfront"))
+        remainder = int(request.form.get("remainder"))
+        if upfront + remainder != 100:
+            flash("Upfront and remainder do not add up to 100!")
+            return redirect(url_for('client', id=id))
+        fee_id = request.form.get("fee")
+        fee_description = cursor.execute("SELECT description FROM fixed_fees WHERE id = ?", [fee_id]).fetchone()["description"]
+        addtotimesheet = request.form.get("addtotimesheet")
+        user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
+        fee = cursor.execute("SELECT amount FROM fixed_fees WHERE id = ?", [fee_id]).fetchone()["amount"]
+        date = datetime.datetime.now().strftime("%d-%m-%Y")
+        if remainder == 0:
+            cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
+                           [id, 1, date, user_firm])
+            timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
+            cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
+                           [timesheet_id, fee_id, fee, date, fee_description])
+        else:
+            if remainder == 100:
+                if addtotimesheet:
+                    remaining_timesheet_id = request.form.get("timesheet")
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
+                                [remaining_timesheet_id, fee_id, fee, date, fee_description])
+                else:
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
+                                [id, 1, date, user_firm])
+                    remaining_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
+                                   [remaining_timesheet_id, fee_id, fee, date, fee_description])
+            else:
+                upfront_fee = round((upfront * fee) / 100, 2)
+                remaining_fee = fee - upfront_fee
+                if addtotimesheet:
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
+                                [id, 1, date, user_firm])
+                    upfront_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    remaining_timesheet_id = request.form.get("timesheet")
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
+                                [upfront_timesheet_id, fee_id, upfront_fee, date, fee_description])
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
+                                [remaining_timesheet_id, fee_id, remaining_fee, date, fee_description])
+                else:
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
+                                [id, 1, date, user_firm])
+                    upfront_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
+                                [id, 1, date, user_firm])
+                    remaining_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, date, description) VALUES (?, ?, ?, ?, ?)", 
+                                   [upfront_timesheet_id, fee_id, upfront_fee, date, fee_description])
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, date, description) VALUES (?, ?, ?, ?, ?)", 
+                                   [remaining_timesheet_id, fee_id, remaining_fee, date, fee_description])
+        connection.commit()
+        connection.close()
+        return redirect(url_for('client', id=id))
+    else:
+        flash("You are not authorised to bill this client for fixed fees!")
+        return redirect(url_for("home"))
+    
+@app.route("/newfixedfee", methods=["POST"])
+@login_required
+def newfixedfee():
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    description = request.form.get("description")
+    amount = request.form.get("amount")
+    user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
+    existing = cursor.execute("SELECT * FROM fixed_fees WHERE description = ? AND firm = ?", [description, user_firm]).fetchall()
+    if len(existing) != 0:
+        flash("This fixed fee has already been added!")
+        return redirect(url_for("home"))
+    cursor.execute("INSERT INTO fixed_fees (description, amount, firm) VALUES (?, ?, ?)", [description, amount, user_firm])
+    connection.commit()
+    connection.close()
+    return redirect(url_for("home"))
 
 @app.route("/export/<id>", methods=["POST"])
 @login_required
@@ -317,11 +446,13 @@ def export(id):
         in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [client_id]).fetchone()["in_progress"] - 1
         payment_pending = cursor.execute("SELECT payment_pending FROM clients WHERE id = ?", [client_id]).fetchone()["payment_pending"] + 1
         cursor.execute("UPDATE clients SET in_progress = ?, payment_pending = ? WHERE id = ?", [in_progress, payment_pending, client_id])
-        timesheet_query = "SELECT datetime, duration, description, amount FROM tasks WHERE client_id=:id"
-        timesheet_dataframe = pandas.read_sql(timesheet_query, con=connection, params={"id": client_id})
+        fixed_fees_query = "SELECT datetime, description, amount FROM fixed_fee_charges WHERE timesheet_id=:id"
+        fixed_fees_dataframe = pandas.read_sql(fixed_fees_query, con=connection, params={"id": id})
+        timesheet_query = "SELECT datetime, duration, description, amount FROM tasks WHERE timesheet_id=:id"
+        timesheet_dataframe = pandas.read_sql(timesheet_query, con=connection, params={"id": id})
         disbursement_query = "SELECT description, amount FROM disbursements WHERE timesheet_id=:id"
         disbursement_dataframe = pandas.read_sql(disbursement_query, con=connection, params={"id": id})
-        invoice_dataframe = pandas.concat([timesheet_dataframe, disbursement_dataframe])
+        invoice_dataframe = pandas.concat([fixed_fees_dataframe, timesheet_dataframe, disbursement_dataframe])
         invoice_dataframe.to_excel(file)
         connection.commit()
         connection.close()
@@ -365,12 +496,13 @@ def import_excel(id):
     cursor = connection.cursor()
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
     if len(rel) != 0:
+        user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
         file = request.files['file']
-        print(request.form.get("date"))
         date = datetime.datetime.strptime(request.form.get("date"), "%Y-%m-%d").strftime("%d-%m-%Y")
         status_code = request.form.get("status")
-        cursor.execute("INSERT INTO timesheets (client_id, status, created) VALUES (?, ?, ?)",
-                    [id, status_code, date])
+        cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)",
+                    [id, status_code, date, user_firm])
+        timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
         if status_code == 1:
             in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
             cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
@@ -380,11 +512,10 @@ def import_excel(id):
         else:
             payment_received = cursor.execute("SELECT payment_received FROM clients WHERE id = ?", [id]).fetchone()["payment_received"] + 1
             cursor.execute("UPDATE clients SET payment_received = ? WHERE id = ?", [payment_received, id])
-        timesheet_id = cursor.execute("SELECT id FROM timesheets WHERE created = ?", [date]).fetchone()["id"]
         tasks_dataframe = pandas.read_excel(file, sheet_name="Timesheet")
         for row in tasks_dataframe.to_dict("records"):
-            task_lawyer = row["id"]
-            task_datetime = row["datetime"]
+            task_lawyer = cursor.execute("SELECT id FROM users WHERE name = ? AND firm = ?", [row["lawyer"], user_firm]).fetchone()["id"]
+            task_datetime = datetime.datetime.strptime(row["datetime"], "%d-%m-%Y")
             task_duration = row["duration"]
             task_description = row["description"]
             task_amount = row["amount"]
@@ -396,6 +527,15 @@ def import_excel(id):
             disbursement_amount = row["amount"]
             cursor.execute("INSERT INTO disbursements (timesheet_id, description, amount) VALUES (?, ?, ?)",
                            [timesheet_id, disbursement_description, disbursement_amount])
+        fixed_fees_dataframe = pandas.read_excel(file, sheet_name="Fixed Fees")
+        for row in fixed_fees_dataframe.to_dict("records"):
+            fixed_fee_datetime = datetime.datetime.strptime(row["datetime"], "%d-%m-%Y")
+            fixed_fee_description = row["description"]
+            fixed_fee = cursor.execute("SELECT id FROM fixed_fees WHERE firm = ? AND description = ?", 
+                                       [user_firm, fixed_fee_description]).fetchone()["id"]
+            fixed_fee_amount = row["amount"]
+            cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)",
+                           [timesheet_id, fixed_fee, fixed_fee_amount, fixed_fee_datetime, fixed_fee_description])
         connection.commit()
         connection.close()
         return redirect(url_for("timesheet", id=timesheet_id))

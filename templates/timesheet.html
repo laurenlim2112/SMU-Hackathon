@@ -153,6 +153,27 @@
         </form>
     {% endif %}
 
+    {% if fixed_fees %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Description</th>
+                    <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fee in fixed_fees %}
+                    <tr>
+                        <td>{{ fee["description"] }}</td>
+                        <td>{{ fee["amount"] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        There are currently no fixed fees for this invoice.
+    {% endif %}
+
     {% if tasks %}
         <table class="table">
             <thead>

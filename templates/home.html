@@ -28,7 +28,34 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="generate-invoice" data-bs-target="#addClientModal" data-bs-toggle="modal" data-bs-dismiss="modal">Add Client</button>
+                    <button type="submit" class="btn btn-primary" id="add-client" data-bs-target="#addClientModal" data-bs-toggle="modal" data-bs-dismiss="modal">Add Client</button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </form>
+
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newFixedFeeModal">
+        Add Fixed Fee
+    </button>
+    <form action="/newfixedfee" method="post" id="newfixedfeeform">
+        <div class="modal fade" id="newFixedFeeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="newFixedFeeModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newFixedFeeModalLabel">Add new fixed fee</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="description" name="description" placeholder="Description" type="text">
+                    </div>
+                    <div class="mb-3">
+                        <input autocomplete="off" class="form-control mx-auto w-auto" id="amount" name="amount" placeholder="Amount" type="number" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="new-fixed-fee" data-bs-target="#newFixedFeeModal" data-bs-toggle="modal" data-bs-dismiss="modal">Add</button>
                 </div>
             </div>
             </div>
