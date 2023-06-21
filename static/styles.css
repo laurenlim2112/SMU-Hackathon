@@ -11,16 +11,41 @@ label {
 }
 
 button {
-  color: white;
-  padding: 14px 20px;
-  margin: 8px 0;
-  border: none;
-  cursor: pointer;
-  width: 100%;
+    color: white;
+    padding: 14px 20px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 100%;
 }
 
 button:hover {
-  opacity: 0.8;
+    opacity: 0.8;
+}
+
+a {
+    color: #3366cc;
+}
+
+.card {
+    width: 80%;
+    height: 70px;
+    padding: 20px;
+    margin: 5px;
+    display: inline-block;
+    align-items: center;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    transition: 0.3s;
+}
+
+.card:hover {
+    box-shadow: 0 6px 12px 0 rgba(0,0,0,0.2);;
+}
+
+.stretched-link {
+    height: 100%;
 }
 
 .fullforminput {
@@ -46,29 +71,30 @@ button:hover {
 }
 
 .dangerbtn {
-  width: auto;
-  padding: 10px 18px;
-  background-color: #f44336;
+    width: auto;
+    padding: 10px 18px;
+    background-color: #f44336;
 }
 
 .imgcontainer {
-  text-align: center;
-  margin: 24px 0 12px 0;
+    text-align: center;
+    margin: 24px 0 12px 0;
 }
 
 img.avatar {
-  width: 40%;
-  border-radius: 50%;
+    width: 40%;
+    border-radius: 50%;
 }
 
 .container {
     margin: 10px;
     padding: 16px;
+    align-items: center;
 }
 
 span.psw {
-  float: right;
-  padding-top: 16px;
+    float: right;
+    padding-top: 16px;
 }
 
 
