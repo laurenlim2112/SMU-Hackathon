@@ -61,4 +61,13 @@
             </div>
         </div>
     </form>
+
+    <p class="container">Get an overall view of your clients.</p>
+    {% for client in clients %}    
+        <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
+            <div class="card">
+                <b>{{ client["name"] }}</b>
+            </div>
+        </a>
+    {% endfor %}
 {% endblock %}

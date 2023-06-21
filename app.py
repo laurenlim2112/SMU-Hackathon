@@ -18,8 +18,20 @@ def home():
     cursor = connection.cursor()
     user = cursor.execute("SELECT name FROM users WHERE id = ?", [id]).fetchone()
     name = user["name"]
+    clients = []
+    rows = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [user_id]).fetchall()
+    for row in rows:
+        client_id = row["client_id"]
+        client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
+        client = {}
+        client["name"] = client_info["name"]
+        client["id"] = client_info["id"]
+        client["in_progress"] = client_info["in_progress"]
+        client["payment_pending"] = client_info["payment_pending"]
+        client["payment_received"] = client_info["payment_received"]
+        clients.append(client)
     connection.close()
-    return render_template("home.html", name=name)
+    return render_template("home.html", name=name, clients=clients)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -121,7 +133,7 @@ def addclient():
     connection.commit()
     connection.close()
     flash("Client added successfully!")
-    return redirect(url_for("dashboard"))
+    return redirect(url_for("home"))
 
 @app.route("/addlawyer/<id>", methods=["POST"])
 @login_required
@@ -145,28 +157,6 @@ def addlawyer(id):
     else:
         flash("You are not authorised to add lawyers for this client!")
         return redirect(url_for("home"))
-
-@app.route("/dashboard", methods=["GET", "POST"])
-@login_required
-def dashboard():
-    user_id = session["user_id"]
-    connection = sqlite3.connect("database.db")
-    connection.row_factory = sqlite3.Row
-    cursor = connection.cursor()
-    clients = []
-    rows = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [user_id]).fetchall()
-    for row in rows:
-        client_id = row["client_id"]
-        client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
-        client = {}
-        client["name"] = client_info["name"]
-        client["id"] = client_info["id"]
-        client["in_progress"] = client_info["in_progress"]
-        client["payment_pending"] = client_info["payment_pending"]
-        client["payment_received"] = client_info["payment_received"]
-        clients.append(client)
-    connection.close()
-    return render_template("dashboard.html", clients=clients)
 
 @app.route("/clients/<id>", methods=["GET"])
 @login_required
