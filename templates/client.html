@@ -9,10 +9,7 @@
 {% endblock %}
 
 {% block main %}
-    <div>
-        Timesheets for {{ client["name"] }}
-    </div>
-
+    <h2 class="container"> Timesheets for {{ client["name"] }} </h2>
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createNewTimesheetModal">
         Create New Timesheet
     </button>

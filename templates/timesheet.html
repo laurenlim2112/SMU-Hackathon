@@ -9,10 +9,7 @@
 {% endblock %}
 
 {% block main %}
-    <div>
-        Timesheet for {{ client["name"] }} created on {{ timesheet["created"] }}
-    </div>
-
+    <h2 class="container"> Timesheet for {{ client["name"] }} created on {{ timesheet["created"] }} </h2>
     <a href="{{ url_for('client', id=client['id']) }}" class="btn btn-info" role="button">Return to Client Page</a>
 
     {% if timesheet["status"] == 1 %}

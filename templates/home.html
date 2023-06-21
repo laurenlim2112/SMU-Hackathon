@@ -5,9 +5,7 @@
 {% endblock %}
 
 {% block main %}
-    <div class="mb-3">
-        Welcome, {{ name }}!
-    </div>
+    <h2 class="container">Welcome, {{ name }}! </h2>
     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addClientModal">
         Add Client
     </button>
@@ -62,11 +60,15 @@
         </div>
     </form>
 
-    <p class="container">Get an overall view of your clients.</p>
+    <hr>
+
+    <h2 class="container">Client Dashboard</h2>
     {% for client in clients %}    
         <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
             <div class="card">
-                <b>{{ client["name"] }}</b>
+                <b>{{ client["name"] }} &mdash;</b>
+                {{ client["in_progress"] }} case(s) in progress,
+                {{ client["payment_pending"] }} payment(s) pending
             </div>
         </a>
     {% endfor %}
