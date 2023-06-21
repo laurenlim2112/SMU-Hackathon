@@ -47,8 +47,9 @@ def register():
             flash("Passwords do not match!")
             return render_template("register.html")
         hashed_password = generate_password_hash(password)
-        cursor.execute("INSERT INTO users (name, email, hash) VALUES(?, ?, ?)", 
-                       [name, email, hashed_password])
+        rate = request.form.get("rate")
+        cursor.execute("INSERT INTO users (name, email, hash, rate) VALUES(?, ?, ?, ?)", 
+                       [name, email, hashed_password, rate])
         connection.commit()
         connection.close()
         flash("Registration successful!")
@@ -112,6 +113,24 @@ def addclient():
     flash("Client added successfully!")
     return redirect(url_for("dashboard"))
 
+@app.route("/addlawyer/<id>", methods=["POST"])
+@login_required
+def addlawyer(id):
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
+    if len(rel) != 0:
+        new_lawyer_id = request.form.get("id")
+        cursor.execute("INSERT INTO users_clients (user_id, client_id) VALUES (?, ?)", [new_lawyer_id, id])
+        connection.commit()
+        connection.close()
+        return redirect(url_for("client", id=id))
+    else:
+        flash("You are not authorised to add lawyers for this client!")
+        return redirect(url_for("home"))
+
 @app.route("/dashboard", methods=["GET", "POST"])
 @login_required
 def dashboard():
@@ -169,11 +188,13 @@ def client(id):
             payment_received_timesheet["id"] = row["id"]
             payment_received_timesheet["created"] = row["created"]
             payment_received_timesheets.append(payment_received_timesheet)
+        lawyers = cursor.execute("SELECT * FROM users").fetchall()
         connection.close()
         return render_template("client.html", client=client, 
                             in_progress_timesheets=in_progress_timesheets, 
                             payment_pending_timesheets=payment_pending_timesheets, 
-                            payment_received_timesheets=payment_received_timesheets)
+                            payment_received_timesheets=payment_received_timesheets,
+                            lawyers=lawyers)
     else:
         flash("You are not authorised to view this client's timesheets!")
         return redirect(url_for("home"))
@@ -250,6 +271,8 @@ def addtimesheet(id):
     if len(rel) != 0:
         cursor.execute("INSERT INTO timesheets (client_id, status, created) VALUES (?, ?, ?)",
                     [id, 1, datetime.datetime.now().strftime("%d-%m-%Y")])
+        in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
+        cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
         connection.commit()
         connection.close()
         return redirect(url_for("client", id=id))
@@ -291,6 +314,9 @@ def export(id):
         filename = request.form.get("filename")
         file = filename + ".xlsx"
         cursor.execute("UPDATE timesheets SET status = 2 WHERE id = ?", [id])
+        in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [client_id]).fetchone()["in_progress"] - 1
+        payment_pending = cursor.execute("SELECT payment_pending FROM clients WHERE id = ?", [client_id]).fetchone()["payment_pending"] + 1
+        cursor.execute("UPDATE clients SET in_progress = ?, payment_pending = ? WHERE id = ?", [in_progress, payment_pending, client_id])
         timesheet_query = "SELECT datetime, duration, description, amount FROM tasks WHERE client_id=:id"
         timesheet_dataframe = pandas.read_sql(timesheet_query, con=connection, params={"id": client_id})
         disbursement_query = "SELECT description, amount FROM disbursements WHERE timesheet_id=:id"
@@ -307,4 +333,72 @@ def export(id):
         return send_file(file, mimetype='application/vnd.ms-excel')
     else:
         flash("You are not authorised to access this invoice!")
+        return redirect(url_for("home"))
+    
+@app.route("/approve/<id>", methods=["POST"])
+@login_required
+def approve(id):
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
+    if len(rel) != 0:
+        cursor.execute("UPDATE timesheets SET status = 3 WHERE id = ?", [id])
+        payment_pending = cursor.execute("SELECT payment_pending FROM clients WHERE id = ?", [client_id]).fetchone()["payment_pending"] - 1
+        payment_received = cursor.execute("SELECT payment_received FROM clients WHERE id = ?", [client_id]).fetchone()["payment_received"] + 1
+        cursor.execute("UPDATE clients SET payment_pending = ?, payment_received = ? WHERE id = ?", [payment_pending, payment_received, client_id])
+        connection.commit()
+        connection.close()
+        return redirect(url_for('timesheet', id=id))
+    else:
+        flash("You are not authorised to approve this payment!")
+        return redirect(url_for("home"))
+    
+@app.route("/import/<id>", methods=["POST"])
+@login_required
+def import_excel(id):
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
+    if len(rel) != 0:
+        file = request.files['file']
+        print(request.form.get("date"))
+        date = datetime.datetime.strptime(request.form.get("date"), "%Y-%m-%d").strftime("%d-%m-%Y")
+        status_code = request.form.get("status")
+        cursor.execute("INSERT INTO timesheets (client_id, status, created) VALUES (?, ?, ?)",
+                    [id, status_code, date])
+        if status_code == 1:
+            in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
+            cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
+        elif status_code == 2:
+            payment_pending = cursor.execute("SELECT payment_pending FROM clients WHERE id = ?", [id]).fetchone()["payment_pending"] + 1
+            cursor.execute("UPDATE clients SET payment_pending = ? WHERE id = ?", [payment_pending, id])
+        else:
+            payment_received = cursor.execute("SELECT payment_received FROM clients WHERE id = ?", [id]).fetchone()["payment_received"] + 1
+            cursor.execute("UPDATE clients SET payment_received = ? WHERE id = ?", [payment_received, id])
+        timesheet_id = cursor.execute("SELECT id FROM timesheets WHERE created = ?", [date]).fetchone()["id"]
+        tasks_dataframe = pandas.read_excel(file, sheet_name="Timesheet")
+        for row in tasks_dataframe.to_dict("records"):
+            task_lawyer = row["id"]
+            task_datetime = row["datetime"]
+            task_duration = row["duration"]
+            task_description = row["description"]
+            task_amount = row["amount"]
+            cursor.execute("INSERT INTO tasks (user_id, client_id, timesheet_id, datetime, duration, description, amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           [task_lawyer, id, timesheet_id, task_datetime, task_duration, task_description, task_amount])
+        disbursements_dataframe = pandas.read_excel(file, sheet_name="Disbursements")
+        for row in disbursements_dataframe.to_dict("records"):
+            disbursement_description = row["description"]
+            disbursement_amount = row["amount"]
+            cursor.execute("INSERT INTO disbursements (timesheet_id, description, amount) VALUES (?, ?, ?)",
+                           [timesheet_id, disbursement_description, disbursement_amount])
+        connection.commit()
+        connection.close()
+        return redirect(url_for("timesheet", id=timesheet_id))
+    else:
+        flash("You are not authorised to import timesheets for this client!")
         return redirect(url_for("home"))
