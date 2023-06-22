@@ -23,7 +23,9 @@ def home():
     user = cursor.execute("SELECT name FROM users WHERE id = ?", [id]).fetchone()
     name = user["name"]
     clients = []
+    
     rows = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [id]).fetchall()
+    tasks = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [id]).fetchall()
     for row in rows:
         client_id = row["client_id"]
         client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
