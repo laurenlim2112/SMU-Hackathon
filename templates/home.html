@@ -37,39 +37,69 @@
 
     <hr class="tab-bar">
 
-    <div class="dashboard">
-        <h2 class="container">
-            Client Dashboard 
-            <span> 
-                <button type="button" class="option-button successbtn" id="addClientModalOpen">
-                    Add Client
-                </button> 
-            </span>
-        </h2>
-        
-        <div class="modal-backdrop" id="addClientModalBackdrop">
-            <div class="modal" id="addClientModal">
-                <form action="/addclient" method="post" id="addclientform" class="modal-form">
-                    <div class="modal-header">
-                        <p class="modal-title">Add new client <span class="modal-close addClientModalClose">&times;</span></p>
-                    </div>
-                    <div class="modal-content">
-                        <input autocomplete="off" autofocus class="fullforminput" id="name" name="name" placeholder="Name" type="text" required>
-                        <input autocomplete="off" class="fullforminput" id="email" name="email" placeholder="Email" type="text" required>
-                        <button type="submit" class="form-button successbtn addClientModalClose" id="add-client">Add Client</button>
-                    </div>
-                </form>
-            </div>
+    <div>
+        <div class="dashboard">
+            <h2 class="container">
+                Client Dashboard 
+                <span> 
+                    <button type="button" class="option-button successbtn" id="addClientModalOpen">
+                        Add Client
+                    </button> 
+                </span>
+            </h2>
             
-        </div>
-        {% for client in clients %}    
-        <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
-            <div class="card">
-                <b>{{ client["name"] }} &mdash;</b>
-                {{ client["in_progress"] }} case(s) in progress,
-                {{ client["payment_pending"] }} payment(s) pending
+            <div class="modal-backdrop" id="addClientModalBackdrop">
+                <div class="modal" id="addClientModal">
+                    <form action="/addclient" method="post" id="addclientform" class="modal-form">
+                        <div class="modal-header">
+                            <p class="modal-title">Add new client <span class="modal-close addClientModalClose">&times;</span></p>
+                        </div>
+                        <div class="modal-content">
+                            <input autocomplete="off" autofocus class="fullforminput" id="name" name="name" placeholder="Name" type="text" required>
+                            <input autocomplete="off" class="fullforminput" id="email" name="email" placeholder="Email" type="text" required>
+                            <button type="submit" class="form-button successbtn addClientModalClose" id="add-client">Add Client</button>
+                        </div>
+                    </form>
+                </div>
+                
             </div>
-        </a>
-        {% endfor %}
+            {% for client in clients %}    
+            <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
+                <div class="card">
+                    <b>{{ client["name"] }} &mdash;</b>
+                    {{ client["in_progress"] }} case(s) in progress,
+                    {{ client["payment_pending"] }} payment(s) pending
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    
+        <div class="personal-timesheet">
+            <p class="table-title">
+                <b>Your Timesheet for {{ date }}</b>
+            </p>
+            {% if tasks %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Client</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                            <tr>
+                                <td>{{ task["client"] }}</td>
+                                <td>{{ task["description"] }}</td>
+                                <td>{{ task["duration"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                No tasks yet!
+            {% endif %}
+        </div>
     </div>
 {% endblock %}

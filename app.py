@@ -34,8 +34,18 @@ def home():
         client["payment_pending"] = client_info["payment_pending"]
         client["payment_received"] = client_info["payment_received"]
         clients.append(client)
+    today = datetime.datetime.now().strftime("%d-%m-%Y")
+    tasks = []
+    t_rows = cursor.execute("SELECT * FROM tasks WHERE user_id = ? AND datetime = ?", [id, today]).fetchall()
+    for row in t_rows:
+        task = {}
+        task["description"] = row["description"]
+        task["duration"] = row["duration"]
+        client_id = row["client_id"]
+        task["client"] = cursor.execute("SELECT name FROM clients WHERE id = ?", [client_id]).fetchone()["name"]
+        tasks.append(task)
     connection.close()
-    return render_template("home.html", name=name, clients=clients)
+    return render_template("home.html", name=name, clients=clients, tasks=tasks, date=today)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -222,6 +232,7 @@ def timesheet(id):
     if len(rel) != 0:
         client = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
         rows = cursor.execute("SELECT * FROM tasks WHERE timesheet_id = ?", [id]).fetchall()
+        tasks_total = cursor.execute("SELECT SUM(amount) FROM tasks WHERE timesheet_id = ?", [id]).fetchone()[0]
         tasks = []
         for row in rows:
             task = {}
@@ -232,6 +243,7 @@ def timesheet(id):
             task["duration"] = row["duration"]
             task["amount"] = row["amount"]
             tasks.append(task)
+        d_total = cursor.execute("SELECT SUM(amount) FROM disbursements WHERE timesheet_id = ?", [id]).fetchone()[0]
         d_rows = cursor.execute("SELECT * FROM disbursements WHERE timesheet_id = ?", [id]).fetchall()
         disbursements = []
         for d_row in d_rows:
@@ -239,6 +251,7 @@ def timesheet(id):
             disbursement["description"] = d_row["description"]
             disbursement["amount"] = d_row["amount"]
             disbursements.append(disbursement)
+        fixed_total = cursor.execute("SELECT SUM(amount) FROM fixed_fee_charges WHERE timesheet_id = ?", [id]).fetchone()[0]
         fixed_rows = cursor.execute("SELECT * FROM fixed_fee_charges WHERE timesheet_id = ?", [id]).fetchall()
         fixed_fees = []
         for fixed_row in fixed_rows:
@@ -249,7 +262,11 @@ def timesheet(id):
             fixed_fees.append(fixed_fee)
         connection.close()
         return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, 
-                               disbursements=disbursements, fixed_fees=fixed_fees)
+                               disbursements=disbursements, 
+                               fixed_fees=fixed_fees,
+                               tasks_total=tasks_total,
+                               d_total=d_total,
+                               fixed_total=fixed_total)
     else:
         return redirect(url_for("home"))
 
@@ -265,7 +282,7 @@ def addtask(id):
     if len(rel) != 0:
         lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [user_id]).fetchone()
         data = request.get_json()
-        date = data["date"]
+        date = datetime.datetime.strptime(data["date"], "%d-%m-%Y").strftime("%d-%m-%Y")
         hours = round(float(data["hours"]), 1)
         description = data["description"]
         amount = hours * lawyer_info["rate"]
@@ -337,6 +354,8 @@ def billfixedfee(id):
         fee = cursor.execute("SELECT amount FROM fixed_fees WHERE id = ?", [fee_id]).fetchone()["amount"]
         date = datetime.datetime.now().strftime("%d-%m-%Y")
         if remainder == 0:
+            in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
+            cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
             cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
                            [id, 1, date, user_firm])
             timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -349,6 +368,8 @@ def billfixedfee(id):
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                 [remaining_timesheet_id, fee_id, fee, date, fee_description])
                 else:
+                    in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
+                    cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
                     cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
                                 [id, 1, date, user_firm])
                     remaining_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -358,6 +379,8 @@ def billfixedfee(id):
                 upfront_fee = round((upfront * fee) / 100, 2)
                 remaining_fee = fee - upfront_fee
                 if addtotimesheet:
+                    in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
+                    cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
                     cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
                                 [id, 1, date, user_firm])
                     upfront_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
@@ -367,15 +390,17 @@ def billfixedfee(id):
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                 [remaining_timesheet_id, fee_id, remaining_fee, date, fee_description])
                 else:
+                    in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 2
+                    cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
                     cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
                                 [id, 1, date, user_firm])
                     upfront_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
                     cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
                                 [id, 1, date, user_firm])
                     remaining_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
-                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, date, description) VALUES (?, ?, ?, ?, ?)", 
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                    [upfront_timesheet_id, fee_id, upfront_fee, date, fee_description])
-                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, date, description) VALUES (?, ?, ?, ?, ?)", 
+                    cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                    [remaining_timesheet_id, fee_id, remaining_fee, date, fee_description])
         connection.commit()
         connection.close()
@@ -469,6 +494,8 @@ def import_excel(id):
         file = request.files['file']
         date = datetime.datetime.strptime(request.form.get("date"), "%Y-%m-%d").strftime("%d-%m-%Y")
         status_code = request.form.get("status")
+        in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
+        cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
         cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)",
                     [id, status_code, date, user_firm])
         timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]

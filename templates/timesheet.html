@@ -80,7 +80,7 @@
                 </button>
             </div>
             <div class="modal-backdrop" id="submitTaskModalBackdrop">
-                <div class="modal" id="submitTaskModal">
+                <div class="modal mid-modal" id="submitTaskModal">
                     <div class="modal-form">
                         <div class="modal-header">
                             <p class="modal-title">Submit Task</p>
@@ -122,6 +122,13 @@
             <p class="table-title">
                 <b>Tasks</b>
             </p>
+            <p class="fee">Total: SGD 
+                {% if tasks_total %}
+                    {{ tasks_total }}
+                {% else %}
+                    0
+                {% endif %}
+            </p>
             {% if tasks %}
                 <table class="table">
                     <thead>
@@ -140,7 +147,7 @@
                                 <td>{{ task["lawyer"] }}</td>
                                 <td>{{ task["duration"] }}</td>
                                 <td>{{ task["description"] }}</td>
-                                <td>{{ task["amount"] }}</td>
+                                <td>SGD {{ task["amount"] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -154,6 +161,13 @@
             <p class="table-title">
                 <b>Disbursements</b>
             </p>
+            <p class="fee">Total: SGD 
+                {% if d_total %}
+                    {{ d_total }}
+                {% else %}
+                    0
+                {% endif %}
+            </p>
             {% if disbursements %}
                 <table class="table">
                     <thead>
@@ -166,7 +180,7 @@
                         {% for disbursement in disbursements %}
                             <tr>
                                 <td>{{ disbursement["description"] }}</td>
-                                <td>{{ disbursement["amount"] }}</td>
+                                <td>SGD {{ disbursement["amount"] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -180,6 +194,13 @@
             <p class="table-title">
                 <b>Fixed Fees</b>
             </p>
+            <p class="fee">Total: SGD 
+                {% if fixed_total %}
+                    {{ fixed_total }}
+                {% else %}
+                    0
+                {% endif %}
+            </p>
             {% if fixed_fees %}
                 <table class="table">
                     <thead>
@@ -192,7 +213,7 @@
                         {% for fee in fixed_fees %}
                             <tr>
                                 <td>{{ fee["description"] }}</td>
-                                <td>{{ fee["amount"] }}</td>
+                                <td>SGD {{ fee["amount"] }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
