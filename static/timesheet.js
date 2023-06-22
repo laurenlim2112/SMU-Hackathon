@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (document.querySelector('#start-task-view') != null) {
         document.querySelector('#start-task-view').style.display = 'block';
-        document.querySelector('#generate-invoice-view').style.display = 'block';
         document.querySelector('#end-task-view').style.display = 'none';
 
         document.querySelector('#confirm-start').addEventListener('click', () => start_task());
@@ -79,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function start_task() {
     document.querySelector('#start-task-view').style.display = 'none';
-    document.querySelector('#generate-invoice-view').style.display = 'none';
     document.querySelector('#end-task-view').style.display = 'block';
     start = Date.now();
     const date = new Date();
@@ -105,7 +103,6 @@ function start_task() {
             })
             .catch(error => console.log(error));
             document.querySelector('#start-task-view').style.display = 'block';
-            document.querySelector('#generate-invoice-view').style.display = 'block';
             document.querySelector('#end-task-view').style.display = 'none';
         }
     }

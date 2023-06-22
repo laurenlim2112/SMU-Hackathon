@@ -9,57 +9,57 @@
 {% endblock %}
 
 {% block main %}
-    <h2 class="container"> Timesheet for {{ client["name"] }} created on {{ timesheet["created"] }} </h2>
-    <a href="{{ url_for('client', id=client['id']) }}" class="btn btn-info" role="button">Return to Client Page</a>
+    <div class="container page-header" style="font-size: 40px;">
+        <b> Invoice for {{ client["name"] }} created {{ timesheet["created"] }} </b>
+        <span style="float: right;">
+            <button type="button" class="option-button primarybtn" id="newFixedFeeModalOpen">
+                <a href="{{ url_for('client', id=client['id']) }}" class="button-link">
+                    Return to Client Page
+                </a>
+            </button>
+        </span>
+    </div>
+
+    <p class="tagline">
+        An overall view of fixed fee services, hourly charged services and disbursements
+        under this invoice for {{ client["name"] }}.
+    </p>
 
     {% if timesheet["status"] == 1 %}
-        <div id="start-task-view">
-            <button type="button" class="successbtn" id="confirm-start">
-                Start Task
-            </button>
-        </div>
+        <div id="start-task-view" style="padding: 10px;">
+            <div id="generate-invoice-button">
+                
+            </div>
 
-        <div id="end-task-view">
-            <button type="button" class="dangerbtn submitTaskModalOpen" id="confirm-end">
-                End Task
-            </button>
-            <div class="modal-backdrop" id="submitTaskModalBackdrop">
-                <div class="modal" id="submitTaskModal">
-                    <div class="modal-header">
-                        <p class="modal-title">Submit Task <span class="modal-close submitTaskModalClose">&times;</span></p>
-                    </div>
-                    <div class="modal-content">
-                        <input autocomplete="off" autofocus class="fullforminput" id="task-description" name="description" placeholder="Task Description" type="text" required>
-                        <button type="button" class="form-button successbtn submitTaskModalClose" id="task-submit">Submit</button>
-                    </div>
+            <div class="invoice-buttons">
+                <button type="button" class="option-button successbtn" id="confirm-start">
+                    Start Task
+                </button>
+                <button type="button" class="option-button successbtn" id="addDisbursementModalOpen">
+                    Add Disbursement
+                </button>
+                <button type="button" class="option-button successbtn" id="generateInvoiceModalOpen">
+                    Generate Invoice
+                </button>
+            </div>
+
+            <div class="modal-backdrop" id="addDisbursementModalBackdrop">
+                <div class="modal" id="addDisbursementModal">
+                    <form action="{{ url_for('disbursement', id=timesheet['id']) }}", method="post" class="modal-form">
+                        <div class="modal-header">
+                            <p class="modal-title">Add disbursement <span class="modal-close addDisbursementModalClose">&times;</span></p>
+                        </div>
+                        <div class="modal-content">
+                            <input autocomplete="off" autofocus class="fullforminput" id="disbursement" name="disbursement" placeholder="Disbursement" type="text" required>
+                            <input autocomplete="off" class="fullforminput" id="amount" name="amount" placeholder="Amount" type="number" step="0.01" min-="0" required>
+                            <button type="submit" class="form-button successbtn addDisbursementModalClose" id="confirm-add">Add</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-        </div>
 
-        <button type="button" class="successbtn" id="addDisbursementModalOpen">
-            Add Disbursement
-        </button>
-        <div class="modal-backdrop" id="addDisbursementModalBackdrop">
-            <div class="modal" id="addDisbursementModal">
-                <form action="{{ url_for('disbursement', id=timesheet['id']) }}", method="post" class="modal-form">
-                    <div class="modal-header">
-                        <p class="modal-title">Add disbursement <span class="modal-close addDisbursementModalClose">&times;</span></p>
-                    </div>
-                    <div class="modal-content">
-                        <input autocomplete="off" autofocus class="fullforminput" id="disbursement" name="disbursement" placeholder="Disbursement" type="text" required>
-                        <input autocomplete="off" class="fullforminput" id="amount" name="amount" placeholder="Amount" type="number" step="0.01" min-="0" required>
-                        <button type="submit" class="form-button successbtn addDisbursementModalClose" id="confirm-add">Add</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <div id="generate-invoice-view">
-            <button type="button" class="successbtn" id="generateInvoiceModalOpen">
-                Generate Invoice
-            </button>
             <div class="modal-backdrop" id="generateInvoiceModalBackdrop">
-                <div class="modal" id="generateInvoiceModal">
+                <div class="modal mid-modal" id="generateInvoiceModal">
                     <form action="{{ url_for('export', id=timesheet['id']) }}" method="post" class="modal-form">
                         <div class="modal-header">
                             <p class="modal-title">Generate invoice <span class="modal-close generateInvoiceModalClose">&times;</span></p>
@@ -72,11 +72,32 @@
                 </div>
             </div>
         </div>
+
+        <div id="end-task-view" style="padding: 10px;">
+            <div class="end-task-button">
+                <button type="button" class="option-button dangerbtn submitTaskModalOpen" id="confirm-end">
+                    End Task
+                </button>
+            </div>
+            <div class="modal-backdrop" id="submitTaskModalBackdrop">
+                <div class="modal" id="submitTaskModal">
+                    <div class="modal-form">
+                        <div class="modal-header">
+                            <p class="modal-title">Submit Task</p>
+                        </div>
+                        <div class="modal-content">
+                            <input autocomplete="off" autofocus class="fullforminput" id="task-description" name="description" placeholder="Task Description" type="text" required>
+                            <button type="button" class="form-button successbtn submitTaskModalClose" id="task-submit">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
     {% endif %}
 
     {% if timesheet["status"] == 2 %}
-        <button type="button" class="successbtn" id="markAsPaidModalOpen">
+        <button type="button" class="option-button successbtn" id="markAsPaidModalOpen">
             Mark as Paid
         </button>
         <div class="modal-backdrop" id="markAsPaidModalBackdrop">
@@ -94,72 +115,91 @@
         </div>
     {% endif %}
 
-    {% if fixed_fees %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Description</th>
-                    <th scope="col">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for fee in fixed_fees %}
-                    <tr>
-                        <td>{{ fee["description"] }}</td>
-                        <td>{{ fee["amount"] }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        There are currently no fixed fees for this invoice.
-    {% endif %}
+    <hr class="tab-bar">
 
-    {% if tasks %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Lawyer</th>
-                    <th scope="col">Hours</th>
-                    <th scope="col">Description</th>
-                    <th scope="col">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in tasks %}
-                    <tr>
-                        <td>{{ task["datetime"] }}</td>
-                        <td>{{ task["lawyer"] }}</td>
-                        <td>{{ task["duration"] }}</td>
-                        <td>{{ task["description"] }}</td>
-                        <td>{{ task["amount"] }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        There are currently no tasks in this timesheet.
-    {% endif %}
-
-    {% if disbursements %}
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Description</th>
-                    <th scope="col">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for disbursement in disbursements %}
-                    <tr>
-                        <td>{{ disbursement["description"] }}</td>
-                        <td>{{ disbursement["amount"] }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        There are currently no disbursements for this invoice.
-    {% endif %}
+    <div class="tables-container">
+        <div class="tasks">
+            <p class="table-title">
+                <b>Tasks</b>
+            </p>
+            {% if tasks %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Date</th>
+                            <th scope="col">Lawyer</th>
+                            <th scope="col">Hours</th>
+                            <th scope="col">Description</th>
+                            <th scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in tasks %}
+                            <tr>
+                                <td>{{ task["datetime"] }}</td>
+                                <td>{{ task["lawyer"] }}</td>
+                                <td>{{ task["duration"] }}</td>
+                                <td>{{ task["description"] }}</td>
+                                <td>{{ task["amount"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                There are currently no tasks in this timesheet.
+            {% endif %}
+        </div>
+    
+        <div class="disbursements">
+            <p class="table-title">
+                <b>Disbursements</b>
+            </p>
+            {% if disbursements %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Description</th>
+                            <th scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for disbursement in disbursements %}
+                            <tr>
+                                <td>{{ disbursement["description"] }}</td>
+                                <td>{{ disbursement["amount"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                There are currently no disbursements for this invoice.
+            {% endif %}
+        </div>
+    
+        <div class="fixed_fees">
+            <p class="table-title">
+                <b>Fixed Fees</b>
+            </p>
+            {% if fixed_fees %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Description</th>
+                            <th scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in fixed_fees %}
+                            <tr>
+                                <td>{{ fee["description"] }}</td>
+                                <td>{{ fee["amount"] }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                There are currently no fixed fees for this invoice.
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

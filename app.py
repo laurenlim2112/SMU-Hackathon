@@ -209,7 +209,7 @@ def client(id):
     else:
         return redirect(url_for("home"))
 
-@app.route("/timesheets/<id>", methods=["GET"])
+@app.route("/invoices/<id>", methods=["GET"])
 @login_required
 def timesheet(id):
     connection = sqlite3.connect("database.db")
