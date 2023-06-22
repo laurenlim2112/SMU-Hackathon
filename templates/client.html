@@ -18,16 +18,16 @@
         </span>
     </div>
 
-    <p class="tagline"> An overall view of invoices for {{ client["name"] }}. </p>
+    <p class="tagline"> An overall view of cases for {{ client["name"] }}. </p>
 
     <h2 class="container">
-        Invoices
+        Cases
         <span>
             <button type="button" class="option-button successbtn" id="addNewTimesheetModalOpen" style="margin-left: 20px;">
-                Create New Invoice
+                Open New Case
             </button>
             <button type="button" class="option-button successbtn" data-bs-toggle="modal" id="importExcelModalOpen">
-                Import Invoice
+                Import Record
             </button>
             <button type="button" class="option-button successbtn" id="billFixedFeeModalOpen">
                 Bill Fixed Fee
@@ -45,12 +45,12 @@
             {% for timesheet in in_progress_timesheets %}
                 <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
                     <div class="invoice-card">
-                        <b>Invoice in progress created on {{ timesheet["created"] }}</b>
+                        <b>Case in progress opened on {{ timesheet["created"] }}</b>
                     </div>
                 </a>
             {% endfor %}        
         {% else %}
-            <p>There are currently no timesheets in progress for this client!</p>
+            <p>There are currently no cases in progress for this client!</p>
         {% endif %}
     </div>
 
@@ -60,7 +60,7 @@
             {% for timesheet in payment_pending_timesheets %}
                 <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
                     <div class="card">
-                        <b>Invoice awaiting payment created on {{ timesheet["created"] }}</b>
+                        <b>Invoice awaiting payment created on {{ timesheet["invoice_generated"] }}</b>
                     </div>
                 </a>
             {% endfor %}
@@ -75,12 +75,12 @@
             {% for timesheet in payment_received_timesheets %}
                 <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
                     <div class="card">
-                        <b>Invoice marked as paid created on {{ timesheet["created"] }}</b>
+                        <b>Invoice paid on {{ timesheet["invoice_paid"] }}</b>
                     </div>
                 </a>
             {% endfor %}
         {% else %}
-            <p>There are currently no invoices marked as paid by this client!</p>
+            <p>There are currently no invoices paid by this client!</p>
         {% endif %}
     </div>
 
@@ -88,10 +88,10 @@
         <div class="modal short-modal" id="addNewTimesheetModal">
             <form id="addtimesheetform" action="{{ url_for('addtimesheet', id=client['id']) }}" method="post" class="modal-form">
                 <div class="modal-header">
-                    <p class="modal-title">Create new invoice <span class="modal-close addNewTimesheetModalClose">&times;</span></p>
+                    <p class="modal-title">Open new case <span class="modal-close addNewTimesheetModalClose">&times;</span></p>
                 </div>
                 <div class="modal-content">
-                    You are about to create a new invoice for {{ client["name"] }}. 
+                    You are about to open a new case for {{ client["name"] }}. 
                     <button type="submit" class="form-button successbtn addNewTimesheetModalClose" id="confirm-create">Create</button>
                 </div>
             </form>
@@ -137,7 +137,7 @@
         <div class="modal" id="importExcelModal">
             <form id="importform" action="{{ url_for('import_excel', id=client['id']) }}" method="post" enctype=multipart/form-data class="modal-form">
                 <div class="modal-header">
-                    <p class="modal-title">Import new Excel invoice <span class="modal-close importExcelModalClose">&times;</span></p>
+                    <p class="modal-title">Import new Excel file <span class="modal-close importExcelModalClose">&times;</span></p>
                 </div>
                 <div class="modal-content">
                     <input class="partialforminput" type="file" id="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />

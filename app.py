@@ -23,7 +23,6 @@ def home():
     user = cursor.execute("SELECT name FROM users WHERE id = ?", [id]).fetchone()
     name = user["name"]
     clients = []
-    
     rows = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [id]).fetchall()
     tasks = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [id]).fetchall()
     for row in rows:
@@ -186,14 +185,14 @@ def client(id):
         for row in payment_pending_rows:
             payment_pending_timesheet = {}
             payment_pending_timesheet["id"] = row["id"]
-            payment_pending_timesheet["created"] = row["created"]
+            payment_pending_timesheet["invoice_generated"] = row["invoice_generated"]
             payment_pending_timesheets.append(payment_pending_timesheet)
         payment_received_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 3", [client_info["id"]]).fetchall()
         payment_received_timesheets = []
         for row in payment_received_rows:
             payment_received_timesheet = {}
             payment_received_timesheet["id"] = row["id"]
-            payment_received_timesheet["created"] = row["created"]
+            payment_received_timesheet["invoice_paid"] = row["invoice_paid"]
             payment_received_timesheets.append(payment_received_timesheet)
         lawyer_rows = cursor.execute("SELECT * FROM users WHERE firm = ?", [user_firm]).fetchall()
         lawyers = []
@@ -221,7 +220,7 @@ def client(id):
     else:
         return redirect(url_for("home"))
 
-@app.route("/invoices/<id>", methods=["GET"])
+@app.route("/cases/<id>", methods=["GET"])
 @login_required
 def timesheet(id):
     connection = sqlite3.connect("database.db")
@@ -262,13 +261,21 @@ def timesheet(id):
             fixed_fee["description"] = cursor.execute("SELECT * FROM fixed_fees WHERE id = ?", [fee_type]).fetchone()["description"]
             fixed_fee["amount"] = fixed_row["amount"]
             fixed_fees.append(fixed_fee)
+        invoice_total = 0
+        if tasks_total:
+            invoice_total += tasks_total
+        if d_total:
+            invoice_total += d_total
+        if fixed_total:
+            invoice_total += fixed_total
         connection.close()
         return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, 
                                disbursements=disbursements, 
                                fixed_fees=fixed_fees,
                                tasks_total=tasks_total,
                                d_total=d_total,
-                               fixed_total=fixed_total)
+                               fixed_total=fixed_total,
+                               invoice_total=invoice_total)
     else:
         return redirect(url_for("home"))
 
@@ -438,9 +445,10 @@ def export(id):
     client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
     if len(rel) != 0:
+        date = datetime.datetime.now().strftime("%d-%m-%Y")
         filename = request.form.get("filename")
         file = filename + ".xlsx"
-        cursor.execute("UPDATE timesheets SET status = 2 WHERE id = ?", [id])
+        cursor.execute("UPDATE timesheets SET status = 2, invoice_generated = ? WHERE id = ?", [date, id])
         in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [client_id]).fetchone()["in_progress"] - 1
         payment_pending = cursor.execute("SELECT payment_pending FROM clients WHERE id = ?", [client_id]).fetchone()["payment_pending"] + 1
         cursor.execute("UPDATE clients SET in_progress = ?, payment_pending = ? WHERE id = ?", [in_progress, payment_pending, client_id])
@@ -473,7 +481,8 @@ def approve(id):
     client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
     if len(rel) != 0:
-        cursor.execute("UPDATE timesheets SET status = 3 WHERE id = ?", [id])
+        date = datetime.datetime.now().strftime("%d-%m-%Y")
+        cursor.execute("UPDATE timesheets SET status = 3, invoice_paid = ? WHERE id = ?", [date, id])
         payment_pending = cursor.execute("SELECT payment_pending FROM clients WHERE id = ?", [client_id]).fetchone()["payment_pending"] - 1
         payment_received = cursor.execute("SELECT payment_received FROM clients WHERE id = ?", [client_id]).fetchone()["payment_received"] + 1
         cursor.execute("UPDATE clients SET payment_pending = ?, payment_received = ? WHERE id = ?", [payment_pending, payment_received, client_id])

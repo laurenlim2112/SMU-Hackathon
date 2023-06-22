@@ -10,7 +10,13 @@
 
 {% block main %}
     <div class="container page-header" style="font-size: 40px;">
-        <b> Invoice for {{ client["name"] }} created {{ timesheet["created"] }} </b>
+        {% if timesheet["status"] == 1 %}
+            <b> Case for {{ client["name"] }} opened {{ timesheet["created"] }} </b>
+        {% elif timesheet["status"] == 2 %}
+            <b> Invoice for {{ client["name"] }} generated {{ timesheet["invoice_generated"] }} </b>
+        {% else %}
+            <b> Record of payment by {{ client["name"] }} made {{ timesheet["invoice_paid"] }} </b>
+        {% endif %}
         <span style="float: right;">
             <button type="button" class="option-button primarybtn" id="newFixedFeeModalOpen">
                 <a href="{{ url_for('client', id=client['id']) }}" class="button-link">
@@ -22,25 +28,30 @@
 
     <p class="tagline">
         An overall view of fixed fee services, hourly charged services and disbursements
-        under this invoice for {{ client["name"] }}.
+        under this case for {{ client["name"] }}.
     </p>
 
     {% if timesheet["status"] == 1 %}
         <div id="start-task-view" style="padding: 10px;">
-            <div id="generate-invoice-button">
-                
-            </div>
-
-            <div class="invoice-buttons">
-                <button type="button" class="option-button successbtn" id="confirm-start">
-                    Start Task
-                </button>
-                <button type="button" class="option-button successbtn" id="addDisbursementModalOpen">
-                    Add Disbursement
-                </button>
-                <button type="button" class="option-button successbtn" id="generateInvoiceModalOpen">
-                    Generate Invoice
-                </button>
+            <div id="invoice-panel">
+                <div class="start">
+                    <button type="button" class="option-button successbtn" id="confirm-start">
+                        Start Task
+                    </button>
+                </div>
+                <div class="middle">
+                    Total: SGD {{ invoice_total }}
+                    <span>
+                        <button type="button" class="option-button successbtn" id="generateInvoiceModalOpen">
+                            Generate Invoice
+                        </button>
+                    </span>
+                </div>
+                <div class="end">
+                    <button type="button" class="option-button successbtn" id="addDisbursementModalOpen">
+                        Add Disbursement
+                    </button>
+                </div>
             </div>
 
             <div class="modal-backdrop" id="addDisbursementModalBackdrop">
@@ -73,7 +84,7 @@
             </div>
         </div>
 
-        <div id="end-task-view" style="padding: 10px;">
+        <div id="end-task-view">
             <div class="end-task-button">
                 <button type="button" class="option-button dangerbtn submitTaskModalOpen" id="confirm-end">
                     End Task
@@ -97,11 +108,13 @@
     {% endif %}
 
     {% if timesheet["status"] == 2 %}
-        <button type="button" class="option-button successbtn" id="markAsPaidModalOpen">
-            Mark as Paid
-        </button>
+        <div class="mark-paid-button">
+            <button type="button" class="option-button successbtn" id="markAsPaidModalOpen">
+                Mark as Paid
+            </button>
+        </div>
         <div class="modal-backdrop" id="markAsPaidModalBackdrop">
-            <div class="modal" id="markAsPaidModal">
+            <div class="modal short-modal" id="markAsPaidModal">
                 <form action="{{ url_for('approve', id=timesheet['id']) }}", method="post" class="modal-form">
                     <div class="modal-header">
                         <p class="modal-title">Mark as paid <span class="modal-close markAsPaidModalClose">&times;</span></p>
