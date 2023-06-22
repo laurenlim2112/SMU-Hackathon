@@ -9,7 +9,11 @@ import sqlite3, os, pandas, datetime
 app = Flask(__name__)
 app.secret_key = os.urandom(12)
 
-@app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET"])
+def index():
+    return redirect(url_for("home"))
+
+@app.route("/home", methods=["GET", "POST"])
 @login_required
 def home():
     id = session["user_id"]
@@ -41,23 +45,18 @@ def register():
     if request.method == "POST":
         name = request.form.get("name")
         if not name:
-            flash("Name cannot be left blank!")
             return render_template("register.html")
         email = request.form.get("email")
         if not email:
-            flash("Email cannot be left blank!")
             return render_template("register.html")
         existing = cursor.execute("SELECT * FROM users WHERE email = ?", [email]).fetchall()
         if len(existing) > 0:
-            flash("Email already in use!")
             return render_template("register.html")
         password = request.form.get("password")
         confirmation = request.form.get("confirmation")
         if not password or not confirmation:
-            flash("Password and confirmation cannot be left blank!")
             return render_template("register.html")
         if password != confirmation:
-            flash("Passwords do not match!")
             return render_template("register.html")
         hashed_password = generate_password_hash(password)
         rate = request.form.get("rate")
@@ -66,7 +65,6 @@ def register():
                         [name, email, hashed_password, rate, firm_id])
         connection.commit()
         connection.close()
-        flash("Registration successful!")
         return redirect(url_for("home"))
     else:
         firm_rows = cursor.execute("SELECT * FROM firms").fetchall()
@@ -85,23 +83,18 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
         if not email:
-            flash("Email needed!")
             return render_template("login.html")
         elif not password:
-            flash("No password")
             return render_template("login.html")
         connection = sqlite3.connect("database.db")
         connection.row_factory = sqlite3.Row
         cursor = connection.cursor()
         result = cursor.execute("SELECT * FROM users WHERE email = ?", [email]).fetchall()
         if len(result) != 1 or not check_password_hash(result[0]["hash"], password):
-            flash("Invalid email address and/or password")
             return render_template("login.html")
         session["user_id"] = result[0]["id"]
-        cursor.execute("UPDATE users SET rate = 600 WHERE name = ?", ["Rosa"])
         connection.commit()
         connection.close()
-        flash("Login successful!")
         return redirect(url_for("home"))
     else:
         return render_template("login.html")
@@ -124,7 +117,6 @@ def addclient():
     firm_id = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
     result = cursor.execute("SELECT * FROM clients WHERE email = ? AND firm = ?", [email, firm_id]).fetchall()
     if len(result) > 0:
-        flash("Client already in system!")
         return redirect(url_for("home"))
     cursor.execute("INSERT INTO clients (name, email, in_progress, payment_pending, payment_received, firm) VALUES (?, ?, ?, ?, ?, ?)", 
                    [name, email, 0, 0, 0, firm_id])
@@ -132,7 +124,6 @@ def addclient():
     cursor.execute("INSERT INTO users_clients (user_id, client_id) VALUES (?, ?)", [user_id, client_id])
     connection.commit()
     connection.close()
-    flash("Client added successfully!")
     return redirect(url_for("home"))
 
 @app.route("/addlawyer/<id>", methods=["POST"])
@@ -148,14 +139,12 @@ def addlawyer(id):
         user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
         new_lawyer_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [new_lawyer_id]).fetchone()["firm"]
         if user_firm != new_lawyer_firm:
-            flash("You are not authorised to add this lawyer for this client!")
             return redirect(url_for("home"))
         cursor.execute("INSERT INTO users_clients (user_id, client_id) VALUES (?, ?)", [new_lawyer_id, id])
         connection.commit()
         connection.close()
         return redirect(url_for("client", id=id))
     else:
-        flash("You are not authorised to add lawyers for this client!")
         return redirect(url_for("home"))
 
 @app.route("/clients/<id>", methods=["GET"])
@@ -218,7 +207,6 @@ def client(id):
                             lawyers=lawyers,
                             fixed_fees = fixed_fees)
     else:
-        flash("You are not authorised to view this client's timesheets!")
         return redirect(url_for("home"))
 
 @app.route("/timesheets/<id>", methods=["GET"])
@@ -263,7 +251,6 @@ def timesheet(id):
         return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, 
                                disbursements=disbursements, fixed_fees=fixed_fees)
     else:
-        flash("You are not authorised to view this timesheet!")
         return redirect(url_for("home"))
 
 @app.route("/addtask/<id>", methods=["POST"])
@@ -288,7 +275,6 @@ def addtask(id):
         connection.close()
         return redirect(url_for("timesheet", id=id))
     else:
-        flash("You are not authorised to add tasks to this timesheet!")
         return redirect(url_for("home"))
 
 @app.route("/addtimesheet/<id>", methods=["POST"])
@@ -309,7 +295,6 @@ def addtimesheet(id):
         connection.close()
         return redirect(url_for("client", id=id))
     else:
-        flash("You are not authorised to add timesheets for this client!")
         return redirect(url_for("home"))
 
 
@@ -330,7 +315,6 @@ def disbursement(id):
         connection.close()
         return redirect(url_for('timesheet', id=id))
     else:
-        flash("You are not authorised to add disbursements to this invoice!")
         return redirect(url_for("home"))
     
 @app.route("/billfixedfee/<id>", methods=["POST"])
@@ -345,7 +329,6 @@ def billfixedfee(id):
         upfront = int(request.form.get("upfront"))
         remainder = int(request.form.get("remainder"))
         if upfront + remainder != 100:
-            flash("Upfront and remainder do not add up to 100!")
             return redirect(url_for('client', id=id))
         fee_id = request.form.get("fee")
         fee_description = cursor.execute("SELECT description FROM fixed_fees WHERE id = ?", [fee_id]).fetchone()["description"]
@@ -398,7 +381,6 @@ def billfixedfee(id):
         connection.close()
         return redirect(url_for('client', id=id))
     else:
-        flash("You are not authorised to bill this client for fixed fees!")
         return redirect(url_for("home"))
     
 @app.route("/newfixedfee", methods=["POST"])
@@ -413,7 +395,6 @@ def newfixedfee():
     user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
     existing = cursor.execute("SELECT * FROM fixed_fees WHERE description = ? AND firm = ?", [description, user_firm]).fetchall()
     if len(existing) != 0:
-        flash("This fixed fee has already been added!")
         return redirect(url_for("home"))
     cursor.execute("INSERT INTO fixed_fees (description, amount, firm) VALUES (?, ?, ?)", [description, amount, user_firm])
     connection.commit()
@@ -453,7 +434,6 @@ def export(id):
             return response
         return send_file(file, mimetype='application/vnd.ms-excel')
     else:
-        flash("You are not authorised to access this invoice!")
         return redirect(url_for("home"))
     
 @app.route("/approve/<id>", methods=["POST"])
@@ -474,7 +454,6 @@ def approve(id):
         connection.close()
         return redirect(url_for('timesheet', id=id))
     else:
-        flash("You are not authorised to approve this payment!")
         return redirect(url_for("home"))
     
 @app.route("/import/<id>", methods=["POST"])
@@ -530,5 +509,4 @@ def import_excel(id):
         connection.close()
         return redirect(url_for("timesheet", id=timesheet_id))
     else:
-        flash("You are not authorised to import timesheets for this client!")
         return redirect(url_for("home"))

@@ -9,18 +9,20 @@
         {% block script %}
         {% endblock %}
     </head>
+
     <body>
-        {% if get_flashed_messages() %}
-            <header>
-                <div class="alert alert-primary mb-0 text-center" role="alert">
-                    {{ get_flashed_messages() | join(" ") }}
-                </div>
-            </header>
-        {% endif %}
-
+        <nav>
+            <div>
+                <a href="{{ url_for('home') }}" class="nav-logo nav-item">BillAble</a>
+                {% if session["user_id"] %}
+                    <a href="/logout" class="nav-item nav-link">Logout</a>
+                {% endif %}
+            </div>
+        </nav>
         <main>
-            {% block main %}{% endblock %}
+            {% block main %}
+            {% endblock %}
         </main>
-
     </body>
+
 </html>

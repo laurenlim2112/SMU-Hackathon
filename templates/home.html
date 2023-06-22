@@ -9,30 +9,17 @@
 {% endblock %}
 
 {% block main %}
-    <h1 class="container">Welcome, {{ name }}! </h1>
+    <h2 class="container page-header">
+        Welcome, {{ name }}! 
+        <span style="float: right;">
+            <button type="button" class="option-button primarybtn" id="newFixedFeeModalOpen">
+                Add Fixed Fee
+            </button>
+        </span>
+    </h2>
 
-    <button type="button" class="successbtn" id="addClientModalOpen">
-        Add Client
-    </button>
-    <div class="modal-backdrop" id="addClientModalBackdrop">
-        <div class="modal" id="addClientModal">
-            <form action="/addclient" method="post" id="addclientform" class="modal-form">
-                <div class="modal-header">
-                    <p class="modal-title">Add new client <span class="modal-close addClientModalClose">&times;</span></p>
-                </div>
-                <div class="modal-content">
-                    <input autocomplete="off" autofocus class="fullforminput" id="name" name="name" placeholder="Name" type="text" required>
-                    <input autocomplete="off" class="fullforminput" id="email" name="email" placeholder="Email" type="text" required>
-                    <button type="submit" class="form-button successbtn addClientModalClose" id="add-client">Add Client</button>
-                </div>
-            </form>
-        </div>
-        
-    </div>    
+    <p class="tagline">Ready to start on your tasks for today?</p>
 
-    <button type="button" class="successbtn" id="newFixedFeeModalOpen">
-        Add Fixed Fee
-    </button>
     <div class="modal-backdrop" id="newFixedFeeModalBackdrop">
         <div class="modal" id="newFixedFeeModal">
             <form action="/newfixedfee" method="post" id="newfixedfeeform" class="modal-form">
@@ -51,7 +38,29 @@
     <hr>
 
     <div class="dashboard">
-        <h2 class="container">Client Dashboard</h2>
+        <h2 class="container">Client Dashboard 
+            <span> 
+                <button type="button" class="option-button successbtn" id="addClientModalOpen">
+                    Add Client
+                </button> 
+            </span>
+        </h2>
+        
+        <div class="modal-backdrop" id="addClientModalBackdrop">
+            <div class="modal" id="addClientModal">
+                <form action="/addclient" method="post" id="addclientform" class="modal-form">
+                    <div class="modal-header">
+                        <p class="modal-title">Add new client <span class="modal-close addClientModalClose">&times;</span></p>
+                    </div>
+                    <div class="modal-content">
+                        <input autocomplete="off" autofocus class="fullforminput" id="name" name="name" placeholder="Name" type="text" required>
+                        <input autocomplete="off" class="fullforminput" id="email" name="email" placeholder="Email" type="text" required>
+                        <button type="submit" class="form-button successbtn addClientModalClose" id="add-client">Add Client</button>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
         {% for client in clients %}    
         <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
             <div class="card">
