@@ -111,8 +111,8 @@
                             <option value="{{ fixed_fee['id'] }}">{{ fixed_fee["description"] }} (${{ fixed_fee["amount"] }})</option>
                         {% endfor %}
                     </select> 
-                    <input autocomplete="off" class="partialforminput" id="upfront" name="upfront" placeholder="Upfront Payment" type="number" min="0" step="1" max="100" required>  
-                    <input autocomplete="off" class="partialforminput" id="remainder" name="remainder" placeholder="Remaining" type="number" min="0" step="1" max="100" required>
+                    <input autocomplete="off" class="partialforminput" id="upfront" name="upfront" placeholder="Percentage Upfront" type="number" min="0" step="1" max="100" required>  
+                    <input autocomplete="off" class="partialforminput" id="remainder" name="remainder" placeholder="Percentage Remaining" type="number" min="0" step="1" max="100" required>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="yes" name="addtotimesheet" id="addtotimesheet">
                         <label class="form-check-label" for="addtotimesheet">
