@@ -61,17 +61,21 @@
                         </div>
                     </form>
                 </div>
-                
             </div>
-            {% for client in clients %}    
-            <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
-                <div class="card">
-                    <b>{{ client["name"] }} &mdash;</b>
-                    {{ client["in_progress"] }} case(s) in progress,
-                    {{ client["payment_pending"] }} payment(s) pending
-                </div>
-            </a>
-            {% endfor %}
+
+            {% if clients %}
+                {% for client in clients %}    
+                <a href="{{ url_for('client', id=client['id']) }}" class="stretched-link">
+                    <div class="card">
+                        <b>{{ client["name"] }} &mdash;</b>
+                        {{ client["in_progress"] }} case(s) in progress,
+                        {{ client["payment_pending"] }} payment(s) pending
+                    </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                You have not been assigned to any clients yet!
+            {% endif %}
         </div>
     
         <div class="personal-timesheet">
@@ -79,12 +83,12 @@
                 <b>Your Timesheet for {{ date }}</b>
             </p>
             {% if tasks %}
-                <table class="table">
+                <table class="table timesheet-table">
                     <thead>
                         <tr>
                             <th scope="col">Client</th>
                             <th scope="col">Description</th>
-                            <th scope="col">Duration</th>
+                            <th scope="col">Hours</th>
                         </tr>
                     </thead>
                     <tbody>

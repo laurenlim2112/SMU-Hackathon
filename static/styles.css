@@ -58,7 +58,7 @@ nav {
     background-color: #0b2d39;
     color: #fff;
     width: 100%;
-    height: 80px;
+    height: 100px;
 }
 
 button:hover {
@@ -86,7 +86,7 @@ a:hover {
 }
 
 .tasks {
-    float:left;
+    float: left;
     width: 50%;
     height: 100%;
     text-align: center;
@@ -134,10 +134,10 @@ a:hover {
 }
 
 .nav-logo {
-    font-size: 40px;
+    font-size: 50px;
     font-weight: bold;
     padding-left: 30px;
-    line-height: 80px;
+    line-height: 100px;
 }
 
 .nav-item {
@@ -152,15 +152,15 @@ a:hover {
 
 .nav-link {
     font-size: 20px;
-    line-height: 80px;
+    line-height: 100px;
     float: right;
-    margin-right: 60px;
+    margin-right: 50px;
     opacity: 0.8;
 }
 
 .page-header{
-    font-size: 50px;
-    line-height: 50px;
+    font-size: 40px;
+    line-height: 40px;
 }
 
 .tagline {
@@ -322,7 +322,12 @@ a:hover {
 
 .personal-timesheet {
     float: left;
-    width: 40%
+    width: 40%;
+}
+
+.timesheet-table {
+    width: 100%;
+    text-align: center;
 }
 
 .card {
