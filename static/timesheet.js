@@ -98,6 +98,7 @@ function start_task() {
                 body: JSON.stringify({
                     date: currentDate,
                     hours: (duration / 3600000).toFixed(1),
+                    rate: document.querySelector('#hourly-rate').value,
                     description: document.querySelector('#task-description').value
                 })
             })

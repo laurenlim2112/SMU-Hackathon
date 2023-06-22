@@ -289,12 +289,11 @@ def addtask(id):
     client_id = cursor.execute("SELECT * FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
     if len(rel) != 0:
-        lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [user_id]).fetchone()
         data = request.get_json()
         date = datetime.datetime.strptime(data["date"], "%d-%m-%Y").strftime("%d-%m-%Y")
         hours = round(float(data["hours"]), 1)
         description = data["description"]
-        amount = hours * lawyer_info["rate"]
+        amount = hours * float(data["rate"])
         cursor.execute("INSERT INTO tasks (user_id, client_id, timesheet_id, datetime, duration, description, amount) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     [user_id, client_id, id, date, hours, description, amount])
         connection.commit()

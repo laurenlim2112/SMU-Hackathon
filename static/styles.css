@@ -44,6 +44,7 @@ td {
 
 .pageform {
     border: 3px solid #f1f1f1;
+    padding-left: 60px;
 }
 
 label {
@@ -171,6 +172,7 @@ a:hover {
 
 .table-title {
     font-size: 20px;
+    text-align: center;
 }
 
 .form-button {
@@ -264,6 +266,10 @@ a:hover {
 
 .tall-modal {
     height: 60%;
+}
+
+.taller-modal {
+    height: 70%;
 }
 
 .modal-header {

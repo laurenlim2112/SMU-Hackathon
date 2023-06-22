@@ -91,13 +91,14 @@
                 </button>
             </div>
             <div class="modal-backdrop" id="submitTaskModalBackdrop">
-                <div class="modal mid-modal" id="submitTaskModal">
+                <div class="modal" id="submitTaskModal">
                     <div class="modal-form">
                         <div class="modal-header">
                             <p class="modal-title">Submit Task</p>
                         </div>
                         <div class="modal-content">
                             <input autocomplete="off" autofocus class="fullforminput" id="task-description" name="description" placeholder="Task Description" type="text" required>
+                            <input autocomplete="off" class="partialforminput" id="hourly-rate" name="rate" placeholder="Hourly Rate" type="number" min="0" step="0.01" required>
                             <button type="button" class="form-button successbtn submitTaskModalClose" id="task-submit">Submit</button>
                         </div>
                     </div>

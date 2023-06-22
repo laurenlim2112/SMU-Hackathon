@@ -99,13 +99,13 @@
     </div>
 
     <div class="modal-backdrop" id="billFixedFeeModalBackdrop">
-        <div class="modal tall-modal" id="billFixedFeeModal">
+        <div class="modal taller-modal" id="billFixedFeeModal">
             <form action="{{ url_for('billfixedfee', id=client['id']) }}" method="post" id="billfixedfeeform" class="modal-form">
                 <div class="modal-header">
                     <p class="modal-title">Bill for a fixed fee <span class="modal-close billFixedFeeModalClose">&times;</span></p>
                 </div>
                 <div class="modal-content">
-                    <select id="fee" name="fee" form="billfixedfeeform" class="form-select partialforminput">
+                    <select id="fee" name="fee" form="billfixedfeeform" class="form-select fullforminput">
                         <option value="" disabled selected>Select service</option>
                         {% for fixed_fee in fixed_fees %}
                             <option value="{{ fixed_fee['id'] }}">{{ fixed_fee["description"] }} (${{ fixed_fee["amount"] }})</option>
@@ -161,7 +161,7 @@
                     <p class="modal-title">Add new lawyer for {{ client["name"] }}<span class="modal-close addNewLawyerModalClose">&times;</span></p>
                 </div>
                 <div class="modal-content">
-                    <select id="id" name="id" form="addlawyerform" class="form-select partialforminput">
+                    <select id="id" name="id" form="addlawyerform" class="form-select fullforminput">
                         <option value="" disabled selected>Select lawyer</option>
                         {% for lawyer in lawyers %}
                             <option value="{{ lawyer['id'] }}">{{ lawyer["name"] }}</option>

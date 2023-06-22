@@ -13,11 +13,8 @@
         <label for="email"><b>Email</b></label>
         <input autocomplete="off" class="fullforminput" id="email" name="email" placeholder="Email" type="text" required>
         
-        <label for="rate"><b>Hourly Rate</b></label>
-        <input autocomplete="off" class="partialforminput" id="rate" name="rate" placeholder="Hourly Rate" type="number" min="0" step="0.01" required>
-        
         <label for="firm"><b>Law Firm</b></label>
-        <select id="firm" name="firm" form="registerform" class="partialforminput">
+        <select id="firm" name="firm" form="registerform" class="fullforminput">
             <option value="" disabled selected>Select your firm</option>
             {% for firm in firms %}
                 <option value="{{ firm['id'] }}">{{ firm["name"] }}</option>
