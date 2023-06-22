@@ -23,7 +23,9 @@ def home():
     user = cursor.execute("SELECT name FROM users WHERE id = ?", [id]).fetchone()
     name = user["name"]
     clients = []
+    
     rows = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [id]).fetchall()
+    tasks = cursor.execute("SELECT * FROM users_clients WHERE user_id = ?", [id]).fetchall()
     for row in rows:
         client_id = row["client_id"]
         client_info = cursor.execute("SELECT * FROM clients WHERE id = ?", [client_id]).fetchone()
@@ -34,8 +36,18 @@ def home():
         client["payment_pending"] = client_info["payment_pending"]
         client["payment_received"] = client_info["payment_received"]
         clients.append(client)
+    for task in tasks:
+            task = {}
+            lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [row["user_id"]]).fetchone()
+            task["lawyer"] = lawyer_info["name"]
+            task["datetime"] = tasks["datetime"]
+            task["description"] = tasks["description"]
+            task["duration"] = tasks["duration"]
+            task["amount"] = tasks["amount"]
+            tasks.append(task)
+
     connection.close()
-    return render_template("home.html", name=name, clients=clients)
+    return render_template("home.html", name=name, clients=clients, tasks=tasks)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
