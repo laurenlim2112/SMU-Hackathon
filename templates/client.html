@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Timesheets for {{ client["name"] }}
+    {{ client["name"] }}
 {% endblock %}
 
 {% block script %}
@@ -9,30 +9,97 @@
 {% endblock %}
 
 {% block main %}
-    <h2 class="container"> Timesheets for {{ client["name"] }} </h2>
+    <div class="container page-header"> 
+        <b> {{ client["name"] }} </b>
+        <span style="float: right;">
+            <button type="button" class="option-button primarybtn" id="addNewLawyerModalOpen" style="float: right;">
+                Add Lawyer
+            </button>
+        </span>
+    </div>
 
-    <button type="button" class="successbtn" id="addNewTimesheetModalOpen">
-        Create New Timesheet
-    </button>
+    <p class="tagline"> An overall view of invoices for {{ client["name"] }}. </p>
+
+    <h2 class="container">
+        Invoices
+        <span>
+            <button type="button" class="option-button successbtn" id="addNewTimesheetModalOpen" style="margin-left: 20px;">
+                Create New Invoice
+            </button>
+            <button type="button" class="option-button successbtn" data-bs-toggle="modal" id="importExcelModalOpen">
+                Import Invoice
+            </button>
+            <button type="button" class="option-button successbtn" id="billFixedFeeModalOpen">
+                Bill Fixed Fee
+            </button>
+        </span>
+    </h2>
+    
+    <button type="button" id="in-progress" class="option-button tab-button">In Progress</button>
+    <button type="button" id="payment-pending" class="option-button tab-button">Payment Pending</button>
+    <button type="button" id="payment-received" class="option-button tab-button">Payment Received</button>
+
+    <hr class="tab-bar" id="tab-bar">
+    <div id="in-progress-view" class="dashboard">
+        {% if in_progress_timesheets %}
+            {% for timesheet in in_progress_timesheets %}
+                <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
+                    <div class="invoice-card">
+                        <b>Invoice in progress created on {{ timesheet["created"] }}</b>
+                    </div>
+                </a>
+            {% endfor %}        
+        {% else %}
+            There are currently no timesheets in progress for this client!
+        {% endif %}
+    </div>
+
+    
+    <div id="payment-pending-view" class="dashboard">
+        {% if payment_pending_timesheets %}
+            {% for timesheet in payment_pending_timesheets %}
+                <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
+                    <div class="card">
+                        <b>Invoice awaiting payment created on {{ timesheet["created"] }}</b>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p>There are currently no invoices awaiting payment from this client!</p>
+        {% endif %}
+    </div>
+
+    
+    <div id="payment-received-view" class="dashboard"s>
+        {% if payment_received_timesheets %}
+            {% for timesheet in payment_received_timesheets %}
+                <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
+                    <div class="card">
+                        <b>Invoice marked as paid created on {{ timesheet["created"] }}</b>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p>There are currently no invoices marked as paid by this client!</p>
+        {% endif %}
+    </div>
+
     <div class="modal-backdrop" id="addNewTimesheetModalBackdrop">
-        <div class="modal" id="addNewTimesheetModal">
+        <div class="modal short-modal" id="addNewTimesheetModal">
             <form id="addtimesheetform" action="{{ url_for('addtimesheet', id=client['id']) }}" method="post" class="modal-form">
                 <div class="modal-header">
-                    <p class="modal-title">Create new timesheet <span class="modal-close addNewTimesheetModalClose">&times;</span></p>
+                    <p class="modal-title">Create new invoice <span class="modal-close addNewTimesheetModalClose">&times;</span></p>
                 </div>
                 <div class="modal-content">
-                    You are about to create a new timesheet for {{ client["name"] }}. 
+                    You are about to create a new invoice for {{ client["name"] }}. 
                     <button type="submit" class="form-button successbtn addNewTimesheetModalClose" id="confirm-create">Create</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <button type="button" class="successbtn" id="billFixedFeeModalOpen">
-        Bill Fixed Fee
-    </button>
     <div class="modal-backdrop" id="billFixedFeeModalBackdrop">
-        <div class="modal" id="billFixedFeeModal">
+        <div class="modal tall-modal" id="billFixedFeeModal">
             <form action="{{ url_for('billfixedfee', id=client['id']) }}" method="post" id="billfixedfeeform" class="modal-form">
                 <div class="modal-header">
                     <p class="modal-title">Bill for a fixed fee <span class="modal-close billFixedFeeModalClose">&times;</span></p>
@@ -49,12 +116,12 @@
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="yes" name="addtotimesheet" id="addtotimesheet">
                         <label class="form-check-label" for="addtotimesheet">
-                          Add remaining payment to existing timesheet
+                          Add remaining payment to existing invoice
                         </label>
                     </div>
                     <div id="select-timesheet">
                         <select id="timesheet" name="timesheet" form="billfixedfeeform" class="form-select partialforminput" aria-label="Default select example">
-                            <option value="" disabled selected>Select timesheet</option>
+                            <option value="" disabled selected>Select invoice</option>
                             {% for timesheet in in_progress_timesheets %}
                                 <option value="{{ timesheet['id'] }}">{{ timesheet["created"] }}</option>
                             {% endfor %}
@@ -66,14 +133,11 @@
         </div>
     </div>
 
-    <button type="button" class="successbtn" data-bs-toggle="modal" id="importExcelModalOpen">
-        Import Timesheet
-    </button>
     <div class="modal-backdrop" id="importExcelModalBackdrop">
         <div class="modal" id="importExcelModal">
             <form id="importform" action="{{ url_for('import_excel', id=client['id']) }}" method="post" enctype=multipart/form-data class="modal-form">
                 <div class="modal-header">
-                    <p class="modal-title">Import new timesheet <span class="modal-close importExcelModalClose">&times;</span></p>
+                    <p class="modal-title">Import new Excel invoice <span class="modal-close importExcelModalClose">&times;</span></p>
                 </div>
                 <div class="modal-content">
                     <input class="partialforminput" type="file" id="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
@@ -90,11 +154,8 @@
         </div>
     </div>
 
-    <button type="button" class="successbtn" id="addNewLawyerModalOpen">
-        Add Lawyer
-    </button>
     <div class="modal-backdrop" id="addNewLawyerModalBackdrop">
-        <div class="modal" id="addNewLawyerModal">
+        <div class="modal mid-modal" id="addNewLawyerModal">
             <form id="addlawyerform" action="{{ url_for('addlawyer', id=client['id']) }}" method="post" class="modal-form">
                 <div clasas="modal-header">
                     <p class="modal-title">Add new lawyer for {{ client["name"] }}<span class="modal-close addNewLawyerModalClose">&times;</span></p>
@@ -110,44 +171,5 @@
                 </div>
             </form>
         </div>
-    </div>
-
-    <ul class="nav nav-tabs">
-        <li class="nav-item">
-            <button type="button" id="in-progress" class="btn btn-primary">In Progress</button>
-        </li>
-        <li class="nav-item">
-            <button type="button" id="payment-pending" class="btn btn-warning">Payment Pending</button>
-        </li>
-        <li class="nav-item">
-            <button type="button" id="payment-received" class="btn btn-success">Payment Received</button>
-        </li>
-      </ul>
-    <div id="in-progress-view" class="dashboard">
-        {% for timesheet in in_progress_timesheets %}
-            <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
-                <div class="card">
-                    <b>Timesheet created on {{ timesheet["created"] }}</b>
-                </div>
-            </a>
-        {% endfor %}
-    </div>
-    <div id="payment-pending-view" class="dashboard">
-        {% for timesheet in payment_pending_timesheets %}
-            <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
-                <div class="card">
-                    <b>Timesheet created on {{ timesheet["created"] }}</b>
-                </div>
-            </a>
-        {% endfor %}
-    </div>
-    <div id="payment-received-view" class="dashboard"s>
-        {% for timesheet in payment_received_timesheets %}
-            <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
-                <div class="card">
-                    <b>Timesheet created on {{ timesheet["created"] }}</b>
-                </div>
-            </a>
-        {% endfor %}
     </div>
 {% endblock %}

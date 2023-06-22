@@ -9,14 +9,14 @@
 {% endblock %}
 
 {% block main %}
-    <h2 class="container page-header">
-        Welcome, {{ name }}! 
+    <div class="container page-header">
+        <b> Welcome, {{ name }}! </b>
         <span style="float: right;">
             <button type="button" class="option-button primarybtn" id="newFixedFeeModalOpen">
                 Add Fixed Fee
             </button>
         </span>
-    </h2>
+    </div>
 
     <p class="tagline">Ready to start on your tasks for today?</p>
 
@@ -38,7 +38,8 @@
     <hr>
 
     <div class="dashboard">
-        <h2 class="container">Client Dashboard 
+        <h2 class="container">
+            Client Dashboard 
             <span> 
                 <button type="button" class="option-button successbtn" id="addClientModalOpen">
                     Add Client

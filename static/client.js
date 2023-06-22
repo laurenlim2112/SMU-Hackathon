@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('#payment-pending-view').style.display = 'none';
     document.querySelector('#payment-received-view').style.display = 'none';
     document.querySelector('#select-timesheet').style.display = 'none';
+    document.querySelector('#tab-bar').visibility = 'hidden';
+
+    document.querySelectorAll('.tab-button').forEach((item) => {
+        item.addEventListener('click', () => {
+            var bar = document.querySelector('#tab-bar');
+            bar.visbility = 'visible';
+        })
+    });
 
     document.querySelector('#in-progress').addEventListener('click', () => {
         document.querySelector('#in-progress-view').style.display = 'block';
