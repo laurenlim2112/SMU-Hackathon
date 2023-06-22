@@ -1,10 +1,80 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-    document.querySelector('#start-task-view').style.display = 'block';
-    document.querySelector('#generate-invoice-view').style.display = 'block';
-    document.querySelector('#end-task-view').style.display = 'none';
+    if (document.querySelector('#start-task-view') != null) {
+        document.querySelector('#start-task-view').style.display = 'block';
+        document.querySelector('#generate-invoice-view').style.display = 'block';
+        document.querySelector('#end-task-view').style.display = 'none';
 
-    document.querySelector('#confirm-start').addEventListener('click', () => start_task());
+        document.querySelector('#confirm-start').addEventListener('click', () => start_task());
+
+        document.querySelectorAll('.submitTaskModalOpen').forEach((item) => {
+            item.addEventListener('click', () => {
+                var modal = document.querySelector('#submitTaskModal');
+                var backdrop = document.querySelector('#submitTaskModalBackdrop');
+                backdrop.style.display = 'flex';
+                modal.style.display = 'flex';
+            })
+        })
+
+        document.querySelectorAll('.submitTaskModalClose').forEach((item) => {
+            item.addEventListener('click', () => {
+                var modal = document.querySelector('#submitTaskModal')
+                var backdrop = document.querySelector('#submitTaskModalBackdrop');
+                backdrop.style.display = 'none';
+                modal.style.display = 'none';
+            })
+        })
+
+        document.querySelector('#addDisbursementModalOpen').addEventListener('click', () => {
+            var modal = document.querySelector('#addDisbursementModal');
+            var backdrop = document.querySelector('#addDisbursementModalBackdrop');
+            backdrop.style.display = 'flex';
+            modal.style.display = 'flex';
+        })
+
+        document.querySelectorAll('.addDisbursementModalClose').forEach((item) => {
+            item.addEventListener('click', () => {
+                var modal = document.querySelector('#addDisbursementModal')
+                var backdrop = document.querySelector('#addDisbursementModalBackdrop');
+                backdrop.style.display = 'none';
+                modal.style.display = 'none';
+            })
+        })
+
+        document.querySelector('#generateInvoiceModalOpen').addEventListener('click', () => {
+            var modal = document.querySelector('#generateInvoiceModal');
+            var backdrop = document.querySelector('#generateInvoiceModalBackdrop');
+            backdrop.style.display = 'flex';
+            modal.style.display = 'flex';
+        })
+
+        document.querySelectorAll('.generateInvoiceModalClose').forEach((item) => {
+            item.addEventListener('click', () => {
+                var modal = document.querySelector('#generateInvoiceModal')
+                var backdrop = document.querySelector('#generateInvoiceModalBackdrop');
+                backdrop.style.display = 'none';
+                modal.style.display = 'none';
+            })
+        })
+    }
+
+    if (document.querySelector('#markAsPaidModalOpen') != null) {
+        document.querySelector('#markAsPaidModalOpen').addEventListener('click', () => {
+            var modal = document.querySelector('#markAsPaidModal');
+            var backdrop = document.querySelector('#markAsPaidModalBackdrop');
+            backdrop.style.display = 'flex';
+            modal.style.display = 'flex';
+        })
+    
+        document.querySelectorAll('.markAsPaidModalClose').forEach((item) => {
+            item.addEventListener('click', () => {
+                var modal = document.querySelector('#markAsPaidModal')
+                var backdrop = document.querySelector('#markAsPaidModalBackdrop');
+                backdrop.style.display = 'none';
+                modal.style.display = 'none';
+            })
+        })
+    }
 });
 
 function start_task() {

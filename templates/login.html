@@ -6,14 +6,14 @@
 
 {% block main %}
     <h2 class="container">Login</h2>
-    <form action="/login" method="post" class="container">
+    <form action="/login" method="post" class="container pageform">
         <label for="email"><b>Email</b></label>
         <input class="fullforminput" type="text" autocomplete="off" autofocus placeholder="Enter Email Address" name="email" required>
 
         <label for="password"><b>Password</b></label>
         <input class="fullforminput" type="password" placeholder="Enter Password" name="password" required>
             
-        <button type="submit" class="successbtn">Login</button>
+        <button type="submit" class="form-button successbtn">Login</button>
     </form>
-    <a href="/register" class="container">New to Billing App Placeholder? Register here!</a>
+    <a href="/register" class="container">New to BillAble? Register here!</a>
 {% endblock %}

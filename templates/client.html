@@ -10,130 +10,107 @@
 
 {% block main %}
     <h2 class="container"> Timesheets for {{ client["name"] }} </h2>
-    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createNewTimesheetModal">
+
+    <button type="button" class="successbtn" id="addNewTimesheetModalOpen">
         Create New Timesheet
     </button>
-    <form action="{{ url_for('addtimesheet', id=client['id']) }}" method="post">
-        <div class="modal fade" id="createNewTimesheetModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createNewTimesheetModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
+    <div class="modal-backdrop" id="addNewTimesheetModalBackdrop">
+        <div class="modal" id="addNewTimesheetModal">
+            <form id="addtimesheetform" action="{{ url_for('addtimesheet', id=client['id']) }}" method="post" class="modal-form">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="createNewTimesheetModalLabel">Create new timesheet for {{ client["name"] }}</h5>
+                    <p class="modal-title">Create new timesheet <span class="modal-close addNewTimesheetModalClose">&times;</span></p>
                 </div>
-                <div class="modal-body">
+                <div class="modal-content">
                     You are about to create a new timesheet for {{ client["name"] }}. 
+                    <button type="submit" class="form-button successbtn addNewTimesheetModalClose" id="confirm-create">Create</button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="confirm-create" data-bs-dismiss="modal">Confirm</button>
-                </div>
-            </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#billFixedFeeModal">
+    <button type="button" class="successbtn" id="billFixedFeeModalOpen">
         Bill Fixed Fee
     </button>
-    <form action="{{ url_for('billfixedfee', id=client['id']) }}" method="post" id="billfixedfeeform">
-        <div class="modal fade" id="billFixedFeeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="billFixedFeeModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
+    <div class="modal-backdrop" id="billFixedFeeModalBackdrop">
+        <div class="modal" id="billFixedFeeModal">
+            <form action="{{ url_for('billfixedfee', id=client['id']) }}" method="post" id="billfixedfeeform" class="modal-form">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="billFixedFeeModalLabel">Bill {{ client["name"] }} for a fixed fee service</h5>
+                    <p class="modal-title">Bill for a fixed fee <span class="modal-close billFixedFeeModalClose">&times;</span></p>
                 </div>
-                <div class="modal-body">
-                    <select id="fee" name="fee" form="billfixedfeeform" class="form-select" aria-label="Default select example">
+                <div class="modal-content">
+                    <select id="fee" name="fee" form="billfixedfeeform" class="form-select partialforminput">
                         <option value="" disabled selected>Select service</option>
                         {% for fixed_fee in fixed_fees %}
                             <option value="{{ fixed_fee['id'] }}">{{ fixed_fee["description"] }} (${{ fixed_fee["amount"] }})</option>
                         {% endfor %}
                     </select> 
-                    <div class="mb-3">
-                        <input autocomplete="off" class="form-control mx-auto w-auto" id="upfront" name="upfront" placeholder="Upfront Payment" type="number" min="0" step="1" max="100">
-                    </div>
-                    <div class="mb-3">
-                        <input autocomplete="off" class="form-control mx-auto w-auto" id="remainder" name="remainder" placeholder="Remaining" type="number" min="0" step="1" max="100">
-                    </div>
+                    <input autocomplete="off" class="partialforminput" id="upfront" name="upfront" placeholder="Upfront Payment" type="number" min="0" step="1" max="100" required>  
+                    <input autocomplete="off" class="partialforminput" id="remainder" name="remainder" placeholder="Remaining" type="number" min="0" step="1" max="100" required>
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="yes" name="addtotimesheet" id="addtotimesheet">
                         <label class="form-check-label" for="addtotimesheet">
                           Add remaining payment to existing timesheet
                         </label>
                     </div>
-                    <div class="mb-3" id="select-timesheet">
-                        <select id="timesheet" name="timesheet" form="billfixedfeeform" class="form-select" aria-label="Default select example">
+                    <div id="select-timesheet">
+                        <select id="timesheet" name="timesheet" form="billfixedfeeform" class="form-select partialforminput" aria-label="Default select example">
                             <option value="" disabled selected>Select timesheet</option>
                             {% for timesheet in in_progress_timesheets %}
                                 <option value="{{ timesheet['id'] }}">{{ timesheet["created"] }}</option>
                             {% endfor %}
                         </select>
                     </div>
+                    <button type="submit" class="form-button successbtn billFixedFeeModalClose" id="bill-fixed">Confirm</button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="bill-fixed" data-bs-dismiss="modal">Confirm</button>
-                </div>
-            </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+    <button type="button" class="successbtn" data-bs-toggle="modal" id="importExcelModalOpen">
         Import Timesheet
     </button>
-    <form id="importform" action="{{ url_for('import_excel', id=client['id']) }}" method="post" enctype=multipart/form-data>
-        <div class="modal fade" id="importExcelModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
+    <div class="modal-backdrop" id="importExcelModalBackdrop">
+        <div class="modal" id="importExcelModal">
+            <form id="importform" action="{{ url_for('import_excel', id=client['id']) }}" method="post" enctype=multipart/form-data class="modal-form">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="importExcelModalLabel">Import new timesheet for {{ client["name"] }}</h5>
+                    <p class="modal-title">Import new timesheet <span class="modal-close importExcelModalClose">&times;</span></p>
                 </div>
-                <div class="modal-body">
-                    <input class="form-control" type="file" id="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
-                    <input type="date" id="date" name="date" placeholder="DD-MM-YYYY">
-                    <select id="status" name="status" form="importform" class="form-select" aria-label="Default select example">
-                        <option value="" disabled selected>Select status</option>
-                        <option value="1">In Progress</option>
-                        <option value="2">Payment Pending</option>
-                        <option value="3">Payment Received</option>
-                    </select>
+                <div class="modal-content">
+                    <input class="partialforminput" type="file" id="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+                    <input type="date" id="date" name="date" placeholder="DD-MM-YYYY" class="partialforminput">
+                        <select id="status" name="status" form="importform" class="form-select partialforminput">
+                            <option value="" disabled selected>Select status</option>
+                            <option value="1">In Progress</option>
+                            <option value="2">Payment Pending</option>
+                            <option value="3">Payment Received</option>
+                        </select>
+                        <button type="submit" class="form-button successbtn importExcelModalClose" id="confirm-import">Confirm</button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success" id="confirm-import" data-bs-dismiss="modal">Confirm</button>
-                </div>
-            </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLawyerModal">
+    <button type="button" class="successbtn" id="addNewLawyerModalOpen">
         Add Lawyer
     </button>
-    <form id="addlawyerform" action="{{ url_for('addlawyer', id=client['id']) }}" method="post">
-        <div class="modal fade" id="addLawyerModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addLawyerModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addLawyerModalLabel">Add new lawyer for {{ client["name"] }}</h5>
+    <div class="modal-backdrop" id="addNewLawyerModalBackdrop">
+        <div class="modal" id="addNewLawyerModal">
+            <form id="addlawyerform" action="{{ url_for('addlawyer', id=client['id']) }}" method="post" class="modal-form">
+                <div clasas="modal-header">
+                    <p class="modal-title">Add new lawyer for {{ client["name"] }}<span class="modal-close addNewLawyerModalClose">&times;</span></p>
                 </div>
-                <div class="modal-body">
-                    <select id="id" name="id" form="addlawyerform" class="form-select" aria-label="Default select example">
+                <div class="modal-content">
+                    <select id="id" name="id" form="addlawyerform" class="form-select partialforminput">
                         <option value="" disabled selected>Select lawyer</option>
                         {% for lawyer in lawyers %}
                             <option value="{{ lawyer['id'] }}">{{ lawyer["name"] }}</option>
                         {% endfor %}
                     </select>
+                    <button type="submit" class="form-button successbtn addNewLawyerModalClose" id="add-lawyer">Add</button>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success" id="add-lawyer" data-bs-dismiss="modal">Add</button>
-                </div>
-            </div>
-            </div>
+            </form>
         </div>
-    </form>
+    </div>
 
     <ul class="nav nav-tabs">
         <li class="nav-item">
@@ -146,31 +123,31 @@
             <button type="button" id="payment-received" class="btn btn-success">Payment Received</button>
         </li>
       </ul>
-    <div id="in-progress-view">
+    <div id="in-progress-view" class="dashboard">
         {% for timesheet in in_progress_timesheets %}
-            <div class="card" style="height:70px">
-                <div class="card-body">
-                    <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">{{ timesheet["created"] }}</a>
+            <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
+                <div class="card">
+                    <b>Timesheet created on {{ timesheet["created"] }}</b>
                 </div>
-            </div>
+            </a>
         {% endfor %}
     </div>
-    <div id="payment-pending-view">
+    <div id="payment-pending-view" class="dashboard">
         {% for timesheet in payment_pending_timesheets %}
-            <div class="card" style="height:70px">
-                <div class="card-body">
-                    <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">{{ timesheet["created"] }}</a>
+            <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
+                <div class="card">
+                    <b>Timesheet created on {{ timesheet["created"] }}</b>
                 </div>
-            </div>
+            </a>
         {% endfor %}
     </div>
-    <div id="payment-received-view">
+    <div id="payment-received-view" class="dashboard"s>
         {% for timesheet in payment_received_timesheets %}
-            <div class="card" style="height:70px">
-                <div class="card-body">
-                    <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">{{ timesheet["created"] }}</a>
+            <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
+                <div class="card">
+                    <b>Timesheet created on {{ timesheet["created"] }}</b>
                 </div>
-            </div>
+            </a>
         {% endfor %}
     </div>
 {% endblock %}

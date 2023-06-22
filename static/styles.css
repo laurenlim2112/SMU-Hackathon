@@ -2,7 +2,7 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
-form {
+.pageform {
     border: 3px solid #f1f1f1;
 }
 
@@ -10,7 +10,21 @@ label {
     padding: 3px;
 }
 
-button {
+button:hover {
+    opacity: 0.8;
+}
+
+
+a {
+    color: #3366cc;
+    text-decoration: none
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.form-button {
     color: white;
     padding: 14px 20px;
     margin: 8px 0;
@@ -19,30 +33,62 @@ button {
     width: 100%;
 }
 
-button:hover {
-    opacity: 0.8;
-}
-
-a {
-    color: #3366cc;
-}
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(0,0,0,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+  }
 
 .modal {
+    background-color: #fff;
+    border-radius: 6px;
+    position: absolute; 
+    border: 1px solid #ccc;
+    width: 50%; 
+    height: 50%;
+    text-align: center;
     display: none;
-    position: fixed; 
-    z-index: 1; 
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
+}
+
+.modal-header {
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.modal-close {
+    font-size: 35px;
+    float: right;
+    margin-right: 25px;
+}
+
+.modal-close:hover, .modal-close:focus {
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .modal-content {
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-    width: 80%; 
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.modal-form {
+    height: 100%;
+    width: 100%;
+    padding: 0px;
+}
+
+.dashboard {
+    height: 350px;
+    overflow-y: auto;
 }
 
 .card {
@@ -109,26 +155,6 @@ img.avatar {
     padding: 16px;
     align-items: center;
 }
-
-.modalcancel {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  
-  .modalcancel:hover,
-  .modalcancel:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-span.psw {
-    float: right;
-    padding-top: 16px;
-}
-
 
 @media screen and (max-width: 300px) {
   span.psw {
