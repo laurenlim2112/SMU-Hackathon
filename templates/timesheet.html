@@ -62,7 +62,7 @@
                         </div>
                         <div class="modal-content">
                             <input autocomplete="off" autofocus class="fullforminput" id="disbursement" name="disbursement" placeholder="Disbursement" type="text" required>
-                            <input autocomplete="off" class="fullforminput" id="amount" name="amount" placeholder="Amount" type="number" step="0.01" min-="0" required>
+                            <input autocomplete="off" class="fullforminput" id="amount" name="amount" placeholder="Amount" type="number" step="0.01" min="0" required>
                             <button type="submit" class="form-button successbtn addDisbursementModalClose" id="confirm-add">Add</button>
                         </div>
                     </form>
@@ -131,6 +131,28 @@
 
     <hr class="tab-bar">
 
+    <div class="modal-backdrop" id="editTaskModalBackdrop">
+        <div class="modal tall-modal" id="editTaskModal">
+            <form action="{{ url_for('edittask', id=timesheet['id']) }}", method="post" class="modal-form" id="edittaskform">
+                <div class="modal-header">
+                    <p class="modal-title">Edit task<span class="modal-close editTaskModalClose">&times;</span></p>
+                </div>
+                <div class="modal-content">
+                    <select id="task" name="task" form="edittaskform" class="form-select fullforminput">
+                        <option value="" disabled selected>Select task</option>
+                        {% for task in tasks %}
+                            <option value="{{ task['id'] }}">{{ task['description'] }} on {{ task['datetime'] }}</option>
+                        {% endfor%}
+                    </select>
+                    <input autocomplete="off" class="fullforminput" id="task-description" name="description" placeholder="Task Description" type="text" required>
+                    <input autocomplete="off" class="partialforminput" id="hours" name="hours" placeholder="New Hours" type="number" min="0" step="0.1" required>
+                    <input autocomplete="off" class="partialforminput" id="hourly-rate" name="rate" placeholder="Hourly Rate" type="number" min="0" step="0.01" required>
+                    <button type="submit" class="form-button successbtn editTaskModalClose" id="confirm-edit">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="tables-container">
         <div class="tasks">
             <p class="table-title">
@@ -140,7 +162,14 @@
                 {% if tasks_total %}
                     {{ tasks_total }}
                 {% else %}
-                    0
+                    0.00
+                {% endif %}
+                {% if timesheet["status"] == 1 and tasks %}
+                    <span>
+                        <button type="button" class="option-button primarybtn" id="editTaskModalOpen">
+                            Edit Task
+                        </button>
+                    </span>
                 {% endif %}
             </p>
             {% if tasks %}
@@ -179,7 +208,7 @@
                 {% if d_total %}
                     {{ d_total }}
                 {% else %}
-                    0
+                    0.00
                 {% endif %}
             </p>
             {% if disbursements %}
@@ -212,7 +241,7 @@
                 {% if fixed_total %}
                     {{ fixed_total }}
                 {% else %}
-                    0
+                    0.00
                 {% endif %}
             </p>
             {% if fixed_fees %}

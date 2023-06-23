@@ -211,7 +211,7 @@ def client(id):
             fixed_fee = {}
             fixed_fee["id"] = row["id"]
             fixed_fee["description"] = row["description"]
-            fixed_fee["amount"] = row["amount"]
+            fixed_fee["amount"] = "{:.2f}".format(row["amount"])
             fixed_fees.append(fixed_fee)
         connection.close()
         return render_template("client.html", client=client, 
@@ -242,10 +242,11 @@ def timesheet(id):
             task = {}
             lawyer_info = cursor.execute("SELECT * FROM users WHERE id = ?", [row["user_id"]]).fetchone()
             task["lawyer"] = lawyer_info["name"]
+            task["id"] = row["id"]
             task["datetime"] = row["datetime"]
             task["description"] = row["description"]
             task["duration"] = row["duration"]
-            task["amount"] = row["amount"]
+            task["amount"] = "{:.2f}".format(row["amount"])
             tasks.append(task)
         d_total = cursor.execute("SELECT SUM(amount) FROM disbursements WHERE timesheet_id = ?", [id]).fetchone()[0]
         d_rows = cursor.execute("SELECT * FROM disbursements WHERE timesheet_id = ?", [id]).fetchall()
@@ -253,7 +254,7 @@ def timesheet(id):
         for d_row in d_rows:
             disbursement = {}
             disbursement["description"] = d_row["description"]
-            disbursement["amount"] = d_row["amount"]
+            disbursement["amount"] = "{:.2f}".format(d_row["amount"])
             disbursements.append(disbursement)
         fixed_total = cursor.execute("SELECT SUM(amount) FROM fixed_fee_charges WHERE timesheet_id = ?", [id]).fetchone()[0]
         fixed_rows = cursor.execute("SELECT * FROM fixed_fee_charges WHERE timesheet_id = ?", [id]).fetchall()
@@ -262,23 +263,30 @@ def timesheet(id):
             fixed_fee = {}
             fee_type = fixed_row["fixed_fee"]
             fixed_fee["description"] = cursor.execute("SELECT * FROM fixed_fees WHERE id = ?", [fee_type]).fetchone()["description"]
-            fixed_fee["amount"] = fixed_row["amount"]
+            fixed_fee["amount"] = "{:.2f}".format(fixed_row["amount"])
             fixed_fees.append(fixed_fee)
         invoice_total = 0
+        formatted_tasks_total = None
+        formatted_d_total = None
+        formatted_fixed_total = None
         if tasks_total:
+            formatted_tasks_total = "{:.2f}".format(tasks_total)
             invoice_total += tasks_total
         if d_total:
+            formatted_d_total = "{:.2f}".format(d_total)
             invoice_total += d_total
         if fixed_total:
+            formatted_fixed_total = "{:.2f}".format(fixed_total)
             invoice_total += fixed_total
+        formatted_invoice_total = "{:.2f}".format(invoice_total)
         connection.close()
         return render_template("timesheet.html", timesheet=timesheet, client=client, tasks=tasks, 
                                disbursements=disbursements, 
                                fixed_fees=fixed_fees,
-                               tasks_total=tasks_total,
-                               d_total=d_total,
-                               fixed_total=fixed_total,
-                               invoice_total=invoice_total)
+                               tasks_total=formatted_tasks_total,
+                               d_total=formatted_d_total,
+                               fixed_total=formatted_fixed_total,
+                               invoice_total=formatted_invoice_total)
     else:
         return redirect(url_for("home"))
 
@@ -467,11 +475,22 @@ def export(id):
         cursor.execute("UPDATE clients SET in_progress = ?, payment_pending = ? WHERE id = ?", [in_progress, payment_pending, client_id])
         fixed_fees_query = "SELECT datetime, description, amount FROM fixed_fee_charges WHERE timesheet_id=:id"
         fixed_fees_dataframe = pandas.read_sql(fixed_fees_query, con=connection, params={"id": id})
+        fixed_total = cursor.execute("SELECT SUM(amount) FROM fixed_fee_charges WHERE timesheet_id = ?", [id]).fetchone()[0]
         timesheet_query = "SELECT datetime, duration, description, amount FROM tasks WHERE timesheet_id=:id"
         timesheet_dataframe = pandas.read_sql(timesheet_query, con=connection, params={"id": id})
+        tasks_total = cursor.execute("SELECT SUM(amount) FROM tasks WHERE timesheet_id = ?", [id]).fetchone()[0]
         disbursement_query = "SELECT description, amount FROM disbursements WHERE timesheet_id=:id"
         disbursement_dataframe = pandas.read_sql(disbursement_query, con=connection, params={"id": id})
-        invoice_dataframe = pandas.concat([fixed_fees_dataframe, timesheet_dataframe, disbursement_dataframe])
+        d_total = cursor.execute("SELECT SUM(amount) FROM disbursements WHERE timesheet_id = ?", [id]).fetchone()[0]
+        invoice_total = 0
+        if tasks_total:
+            invoice_total += tasks_total
+        if d_total:
+            invoice_total += d_total
+        if fixed_total:
+            invoice_total += fixed_total
+        total_dataframe = pandas.DataFrame([[invoice_total]], columns=['amount'])
+        invoice_dataframe = pandas.concat([fixed_fees_dataframe, timesheet_dataframe, disbursement_dataframe, total_dataframe])
         invoice_dataframe.to_excel(file)
         connection.commit()
         connection.close()
@@ -561,4 +580,27 @@ def import_excel(id):
         connection.close()
         return redirect(url_for("timesheet", id=timesheet_id))
     else:
+        return redirect(url_for("home"))
+    
+@app.route("/edit/<id>", methods=["POST"])
+@login_required
+def edittask(id):
+    user_id = session["user_id"]
+    connection = sqlite3.connect("database.db")
+    connection.row_factory = sqlite3.Row
+    cursor = connection.cursor()
+    client_id = cursor.execute("SELECT client_id FROM timesheets WHERE id = ?", [id]).fetchone()["client_id"]
+    rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, client_id]).fetchall()
+    if len(rel) != 0:
+        task_id = request.form.get("task")
+        hourly_rate = request.form.get("rate")
+        hours = request.form.get("hours")
+        description = request.form.get("description")
+        new_amount = round(float(hourly_rate) * float(hours), 2)
+        cursor.execute("UPDATE tasks SET duration = ?, amount = ?, description = ? WHERE id = ?", [hours, new_amount, description, task_id])
+        connection.commit()
+        connection.close()
+        return redirect(url_for("timesheet", id=id))
+    else:
+        print('help')
         return redirect(url_for("home"))

@@ -55,6 +55,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 modal.style.display = 'none';
             })
         })
+
+        document.querySelector('#editTaskModalOpen').addEventListener('click', () => {
+            var modal = document.querySelector('#editTaskModal');
+            var backdrop = document.querySelector('#editTaskModalBackdrop');
+            backdrop.style.display = 'flex';
+            modal.style.display = 'flex';
+        })
+
+        document.querySelectorAll('.editTaskModalClose').forEach((item) => {
+            item.addEventListener('click', () => {
+                var modal = document.querySelector('#editTaskModal')
+                var backdrop = document.querySelector('#editTaskModalBackdrop');
+                backdrop.style.display = 'none';
+                modal.style.display = 'none';
+            })
+        })
     }
 
     if (document.querySelector('#markAsPaidModalOpen') != null) {
