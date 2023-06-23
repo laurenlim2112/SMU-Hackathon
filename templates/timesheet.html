@@ -157,19 +157,19 @@
         <div class="tasks">
             <p class="table-title">
                 <b>Tasks</b>
+                {% if timesheet["status"] == 1 and tasks %}
+                    <span>
+                        <a href="#" id="editTaskModalOpen" style="font-size: 15px;">
+                            Edit Task
+                        </a>
+                    </span>
+                {% endif %}
             </p>
             <p class="fee">Total: SGD 
                 {% if tasks_total %}
                     {{ tasks_total }}
                 {% else %}
                     0.00
-                {% endif %}
-                {% if timesheet["status"] == 1 and tasks %}
-                    <span>
-                        <button type="button" class="option-button primarybtn" id="editTaskModalOpen">
-                            Edit Task
-                        </button>
-                    </span>
                 {% endif %}
             </p>
             {% if tasks %}

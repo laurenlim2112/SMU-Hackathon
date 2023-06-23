@@ -70,10 +70,9 @@ def register():
         if password != confirmation:
             return render_template("register.html")
         hashed_password = generate_password_hash(password)
-        rate = request.form.get("rate")
         firm_id = request.form.get("firm")
-        cursor.execute("INSERT INTO users (name, email, hash, rate, firm) VALUES(?, ?, ?, ?, ?)", 
-                        [name, email, hashed_password, rate, firm_id])
+        cursor.execute("INSERT INTO users (name, email, hash, firm) VALUES(?, ?, ?, ?)", 
+                        [name, email, hashed_password, firm_id])
         connection.commit()
         connection.close()
         return redirect(url_for("home"))
