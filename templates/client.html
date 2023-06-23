@@ -46,6 +46,7 @@
                 <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
                     <div class="invoice-card">
                         <b>Case in progress opened on {{ timesheet["created"] }}</b>
+                        (Case Ref: {{ timesheet["caseref"] }})
                     </div>
                 </a>
             {% endfor %}        
@@ -61,6 +62,7 @@
                 <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
                     <div class="card">
                         <b>Invoice awaiting payment created on {{ timesheet["invoice_generated"] }}</b>
+                        (Case Ref: {{ timesheet["caseref"] }})
                     </div>
                 </a>
             {% endfor %}
@@ -76,6 +78,7 @@
                 <a href="{{ url_for('timesheet', id=timesheet['id']) }}" class="stretched-link">
                     <div class="card">
                         <b>Invoice paid on {{ timesheet["invoice_paid"] }}</b>
+                        (Case Ref: {{ timesheet["caseref"] }})
                     </div>
                 </a>
             {% endfor %}
@@ -92,6 +95,7 @@
                 </div>
                 <div class="modal-content">
                     You are about to open a new case for {{ client["name"] }}. 
+                    <input class="partialforminput" type="text" autocomplete="off" autofocus placeholder="Case Reference Number" name="caseref" required>
                     <button type="submit" class="form-button successbtn addNewTimesheetModalClose" id="confirm-create">Create</button>
                 </div>
             </form>
@@ -113,17 +117,19 @@
                     </select> 
                     <input autocomplete="off" class="partialforminput" id="upfront" name="upfront" placeholder="Percentage Upfront" type="number" min="0" step="1" max="100" required>  
                     <input autocomplete="off" class="partialforminput" id="remainder" name="remainder" placeholder="Percentage Remaining" type="number" min="0" step="1" max="100" required>
+                    <input class="partialforminput" type="text" autocomplete="off" placeholder="Case Reference Number (Upfront)" name="caserefupfront">
+                    <input class="partialforminput" type="text" autocomplete="off" placeholder="Case Reference Number (Remaining)" name="caserefremaining">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" value="yes" name="addtotimesheet" id="addtotimesheet">
                         <label class="form-check-label" for="addtotimesheet">
-                          Add remaining payment to existing invoice
+                          Add remaining payment to existing case
                         </label>
                     </div>
                     <div id="select-timesheet">
                         <select id="timesheet" name="timesheet" form="billfixedfeeform" class="form-select partialforminput" aria-label="Default select example">
-                            <option value="" disabled selected>Select invoice</option>
+                            <option value="" disabled selected>Select case</option>
                             {% for timesheet in in_progress_timesheets %}
-                                <option value="{{ timesheet['id'] }}">{{ timesheet["created"] }}</option>
+                                <option value="{{ timesheet['id'] }}">{{ timesheet["caseref"] }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -142,13 +148,14 @@
                 <div class="modal-content">
                     <input class="partialforminput" type="file" id="file" name="file" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
                     <input type="date" id="date" name="date" placeholder="DD-MM-YYYY" class="partialforminput">
-                        <select id="status" name="status" form="importform" class="form-select partialforminput">
-                            <option value="" disabled selected>Select status</option>
-                            <option value="1">In Progress</option>
-                            <option value="2">Payment Pending</option>
-                            <option value="3">Payment Received</option>
-                        </select>
-                        <button type="submit" class="form-button successbtn importExcelModalClose" id="confirm-import">Confirm</button>
+                    <select id="status" name="status" form="importform" class="form-select partialforminput">
+                        <option value="" disabled selected>Select status</option>
+                        <option value="1">In Progress</option>
+                        <option value="2">Payment Pending</option>
+                        <option value="3">Payment Received</option>
+                    </select>
+                    <input class="partialforminput" type="text" autocomplete="off" placeholder="Case Reference Number" name="caseref" required>
+                    <button type="submit" class="form-button successbtn importExcelModalClose" id="confirm-import">Confirm</button>
                 </div>
             </form>
         </div>

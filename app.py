@@ -179,6 +179,7 @@ def client(id):
             in_progress_timesheet = {}
             in_progress_timesheet["id"] = row["id"]
             in_progress_timesheet["created"] = row["created"]
+            in_progress_timesheet["caseref"] = row["case_ref_no"]
             in_progress_timesheets.append(in_progress_timesheet)
         payment_pending_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 2", [client_info["id"]]).fetchall()
         payment_pending_timesheets = []
@@ -186,6 +187,7 @@ def client(id):
             payment_pending_timesheet = {}
             payment_pending_timesheet["id"] = row["id"]
             payment_pending_timesheet["invoice_generated"] = row["invoice_generated"]
+            payment_pending_timesheet["caseref"] = row["case_ref_no"]
             payment_pending_timesheets.append(payment_pending_timesheet)
         payment_received_rows = cursor.execute("SELECT * FROM timesheets WHERE client_id = ? AND status = 3", [client_info["id"]]).fetchall()
         payment_received_timesheets = []
@@ -193,6 +195,7 @@ def client(id):
             payment_received_timesheet = {}
             payment_received_timesheet["id"] = row["id"]
             payment_received_timesheet["invoice_paid"] = row["invoice_paid"]
+            payment_received_timesheet["caseref"] = row["case_ref_no"]
             payment_received_timesheets.append(payment_received_timesheet)
         lawyer_rows = cursor.execute("SELECT * FROM users WHERE firm = ?", [user_firm]).fetchall()
         lawyers = []
@@ -311,9 +314,10 @@ def addtimesheet(id):
     cursor = connection.cursor()
     rel = cursor.execute("SELECT * FROM users_clients WHERE user_id = ? AND client_id = ?", [user_id, id]).fetchall()
     if len(rel) != 0:
+        case_ref = request.form.get("caseref")
         user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
-        cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)",
-                    [id, 1, datetime.datetime.now().strftime("%d-%m-%Y"), user_firm])
+        cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)",
+                    [id, 1, datetime.datetime.now().strftime("%d-%m-%Y"), user_firm, case_ref])
         in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
         cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
         connection.commit()
@@ -361,50 +365,60 @@ def billfixedfee(id):
         user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
         fee = cursor.execute("SELECT amount FROM fixed_fees WHERE id = ?", [fee_id]).fetchone()["amount"]
         date = datetime.datetime.now().strftime("%d-%m-%Y")
+        # no remainder, 100% upfront payment (1 new timesheet/case for upfront)
         if remainder == 0:
+            case_ref = request.form.get("caserefupfront")
             in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
             cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
-            cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
-                           [id, 1, date, user_firm])
+            cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)", 
+                           [id, 1, date, user_firm, case_ref])
             timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
             cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                            [timesheet_id, fee_id, fee, date, fee_description])
         else:
             if remainder == 100:
+                # no upfront, 100% payment after task completion, add to existing timesheet/case (0 new timesheets/cases)
                 if addtotimesheet:
                     remaining_timesheet_id = request.form.get("timesheet")
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                 [remaining_timesheet_id, fee_id, fee, date, fee_description])
+                # no upfront, 100% payment after task completion, create new case/timesheet (1 new timesheet/case for remaining)
                 else:
                     in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
                     cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
-                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
-                                [id, 1, date, user_firm])
+                    case_ref = request.form.get("caserefremaining")
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)", 
+                                [id, 1, date, user_firm, case_ref])
                     remaining_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                    [remaining_timesheet_id, fee_id, fee, date, fee_description])
             else:
                 upfront_fee = round((upfront * fee) / 100, 2)
                 remaining_fee = fee - upfront_fee
+                # part upfront, part remaining payment, create new case/timesheet (1 new timesheet/case for upfront)
                 if addtotimesheet:
+                    case_ref = request.form.get("caserefupfront")
                     in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
                     cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
-                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
-                                [id, 1, date, user_firm])
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)", 
+                                [id, 1, date, user_firm, case_ref])
                     upfront_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
                     remaining_timesheet_id = request.form.get("timesheet")
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                 [upfront_timesheet_id, fee_id, upfront_fee, date, fee_description])
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                 [remaining_timesheet_id, fee_id, remaining_fee, date, fee_description])
+                # part upfront, part remaining payment, create new case/timesheet for upfront (2 new timesheets)
                 else:
+                    case_ref_upfront = request.form.get("caserefupfront")
                     in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 2
                     cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
-                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
-                                [id, 1, date, user_firm])
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)", 
+                                [id, 1, date, user_firm, case_ref_upfront])
                     upfront_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
-                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)", 
-                                [id, 1, date, user_firm])
+                    case_ref_remaining = request.form.get("caserefremaining")
+                    cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)", 
+                                [id, 1, date, user_firm, case_ref_remaining])
                     remaining_timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
                     cursor.execute("INSERT INTO fixed_fee_charges (timesheet_id, fixed_fee, amount, datetime, description) VALUES (?, ?, ?, ?, ?)", 
                                    [upfront_timesheet_id, fee_id, upfront_fee, date, fee_description])
@@ -503,11 +517,12 @@ def import_excel(id):
         user_firm = cursor.execute("SELECT firm FROM users WHERE id = ?", [user_id]).fetchone()["firm"]
         file = request.files['file']
         date = datetime.datetime.strptime(request.form.get("date"), "%Y-%m-%d").strftime("%d-%m-%Y")
+        case_ref = request.form.get("caseref")
         status_code = request.form.get("status")
         in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1
         cursor.execute("UPDATE clients SET in_progress = ? WHERE id = ?", [in_progress, id])
-        cursor.execute("INSERT INTO timesheets (client_id, status, created, firm) VALUES (?, ?, ?, ?)",
-                    [id, status_code, date, user_firm])
+        cursor.execute("INSERT INTO timesheets (client_id, status, created, firm, case_ref_no) VALUES (?, ?, ?, ?, ?)",
+                    [id, status_code, date, user_firm, case_ref])
         timesheet_id = cursor.execute("SELECT last_insert_rowid()").fetchone()[0]
         if status_code == 1:
             in_progress = cursor.execute("SELECT in_progress FROM clients WHERE id = ?", [id]).fetchone()["in_progress"] + 1

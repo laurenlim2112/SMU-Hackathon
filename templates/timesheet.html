@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block title %}
-     Invoice for {{ client["name"] }}
+    Case Ref {{ timesheet["case_ref_no"] }}
 {% endblock %}
 
 {% block script %}
@@ -28,7 +28,7 @@
 
     <p class="tagline">
         An overall view of fixed fee services, hourly charged services and disbursements
-        under this case for {{ client["name"] }}.
+        under this case for {{ client["name"] }}. (Case Ref: {{ timesheet["case_ref_no"] }})
     </p>
 
     {% if timesheet["status"] == 1 %}
